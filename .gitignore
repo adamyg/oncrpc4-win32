@@ -27,6 +27,7 @@ Makefile
 *.obj
 *.err
 *.mbr
+*.aps
 
 # Precompiled Headers
 *.gch

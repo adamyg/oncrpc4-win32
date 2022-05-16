@@ -3,4 +3,5 @@ service_license.h
 rpcbind_usage.h
 Makefile
 *.err
+*.aps
 
