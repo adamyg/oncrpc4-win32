@@ -1,5 +1,6 @@
 bsd_license.h
 service_license.h
+rpcbind_usage.h
 Makefile
 *.err
 
