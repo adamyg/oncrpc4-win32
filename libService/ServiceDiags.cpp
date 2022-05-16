@@ -40,7 +40,8 @@ static const char *loglevels[] = {
         "WARNING| ",
         "INFO   | ",
         "DEBUG  | ",
-        "TRACE  | "
+        "TRACE  | ",    //stdout
+        "STDERR | "     //stderr
         };
 
 static const char *month[] = {

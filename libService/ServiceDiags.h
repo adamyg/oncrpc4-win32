@@ -38,7 +38,7 @@ class ServiceDiags {
 public:
         struct Adapter {
                 enum loglevel {
-                LLNONE, LLERROR, LLWARNING, LLINFO, LLDEBUG, LLTRACE
+                        LLNONE, LLERROR, LLWARNING, LLINFO, LLDEBUG, LLTRACE, LLSTDERR
                 };
 
                 static void setlogtid(bool value);

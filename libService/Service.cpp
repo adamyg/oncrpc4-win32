@@ -29,6 +29,8 @@
 #include <fcntl.h>
 #include <io.h>
 
+#include <vector>
+#include <algorithm>
 #include <cstring>
 
 #include <WinSock2.h>
@@ -49,11 +51,26 @@
 #define PIPESIZE        (8 * 1024)
 
 struct Service::PipeEndpoint {
-        enum pipe_state { EP_CREATED, EP_CONNECT, EP_CONNECT_ERROR, EP_READY, EP_READING, EP_READ };
+        enum pipe_state { EP_CREATED, EP_CONNECT, EP_CONNECT_ERROR, EP_READY, EP_READING };
 
         PipeEndpoint(HANDLE _ioevent, HANDLE _handle, DWORD _size) :
-                ioevent(_ioevent), handle(_handle), size(_size), state(EP_CREATED), avail(_size), cursor(buffer)
+                pending(FALSE),
+                ioevent(_ioevent), handle(_handle),
+                size(_size), state(EP_CREATED),
+                log_level_(ServiceDiags::Adapter::LLTRACE),
+                avail(_size), cursor(buffer)
         {
+                memset(&overlapped, 0, sizeof(overlapped));
+        }
+
+        void log_level(ServiceDiags::Adapter::loglevel ll)
+        {
+                log_level_ = ll;
+        }
+
+        ServiceDiags::Adapter::loglevel log_level() const
+        {
+                return log_level_;
         }
 
         void reset()
@@ -61,14 +78,24 @@ struct Service::PipeEndpoint {
                 cursor = buffer, avail = size;
         }
 
-        void pushed(DWORD bytes)
+        char *pushed(bool &eof)
         {
-                assert(bytes <= avail);
-                avail -= bytes; cursor += bytes;
-                cursor[0] = 0;
+                char *ocursor = cursor;         // current read cursor.
+                if (result || cursor != buffer) {
+                        eof = true;
+                        if (result) {           // new data.
+                                assert(result <= avail);
+                                avail -= result; cursor += result;
+                                result = 0;
+                                eof = false;
+                        }
+                        cursor[0] = 0;
+                        return ocursor;
+                }
+                return NULL;
         }
 
-        void popped(DWORD bytes)
+        void pop(DWORD bytes)
         {
                 const DWORD t_length = length();
                 assert(bytes <= t_length);
@@ -86,9 +113,17 @@ struct Service::PipeEndpoint {
                 return size - avail;
         }
 
-        void CompletionSetup()
+        DWORD data() const
+        {
+                return (cursor - buffer);
+        }
+
+        bool CompletionSetup()
         {
                 DWORD lasterr;
+
+                assert(FALSE == pending);
+
                 if (PipeEndpoint::EP_CREATED == state || PipeEndpoint::EP_CONNECT_ERROR == state) {
                         overlapped.hEvent = ioevent;
                         if (! ::ConnectNamedPipe(handle, &overlapped)) {
@@ -96,6 +131,7 @@ struct Service::PipeEndpoint {
                                         state = PipeEndpoint::EP_READY;
                                 } else if (ERROR_IO_PENDING == lasterr) {
                                         state = PipeEndpoint::EP_CONNECT;
+                                        pending = TRUE;
                                 } else {
                                         state = PipeEndpoint::EP_CONNECT_ERROR;
                                         assert(false);
@@ -104,34 +140,58 @@ struct Service::PipeEndpoint {
                                 state = PipeEndpoint::EP_CONNECT_ERROR;
                                 assert(false);
                         }
-                }
 
-                if (PipeEndpoint::EP_READY == state) {
-                        overlapped.hEvent = ioevent;
-                        if (! ::ReadFile(handle, cursor, avail, NULL, &overlapped)) {
-                                assert(ERROR_IO_PENDING == (lasterr = GetLastError()));
-                                state = PipeEndpoint::EP_READING;
+                } else if (PipeEndpoint::EP_READY == state) {
+                        assert(overlapped.hEvent == ioevent);
+                        if (! ::ReadFile(handle, cursor, avail, &result, &overlapped)) {
+                                const DWORD err = GetLastError();
+                                if (ERROR_IO_PENDING == err) { // pending
+                                        state = PipeEndpoint::EP_READING;
+                                        pending = TRUE;
+                                } else if (ERROR_MORE_DATA == err) { // partial message
+                                        state = PipeEndpoint::EP_READING;
+                                        ::SetEvent(ioevent);
+                                } else if (ERROR_HANDLE_EOF == err || ERROR_BROKEN_PIPE == err) {
+                                        return false;
+                                } else {
+                                        assert(false);
+                                        return false;
+                                }
                         } else {
                                 state = PipeEndpoint::EP_READING;
                                 ::SetEvent(ioevent);
                         }
+
+                } else {
+                        assert(false);
                 }
+                return true;
         }
 
-        bool CompletionResults(DWORD &dwRead)
+        bool CompletionResults()
         {
-                return (0 != ::GetOverlappedResult(handle, &overlapped, &dwRead, FALSE));
+                if (! pending || ::GetOverlappedResult(handle, &overlapped, &result, FALSE)) {
+                        pending = FALSE;
+                        return true;
+                }
+                return false;
         }
 
+private:
+        OVERLAPPED      overlapped;
+        BOOL            pending;
+        DWORD           result;
+
+public:
         const HANDLE    ioevent;
         const HANDLE    handle;
         const DWORD     size;
         enum pipe_state state;
-        OVERLAPPED      overlapped;
+        ServiceDiags::Adapter::loglevel log_level_;
         DWORD           avail;                  // available bytes.
         char *          cursor;                 // current read cursor.
         char            buffer[1];              // underlying buffer, of 'size' bytes.
-                // ... data ....
+            // ... data ....
 };
 
 
@@ -320,12 +380,14 @@ Service::Initialise()
         }
 
         if (options_.logger) {
-                PipeEndpoint *endpoint = 0;
+                PipeEndpoint *endpoint = nullptr;
 
                 if (unsigned ret = NewPipeEndpoint(pipe_name_, endpoint)) {
                         diags().ferror("unable to open redirect pipe <%s>: %u", pipe_name_, ret);
                         return -1;
                 }
+
+                endpoint->log_level(ServiceDiags::Adapter::LLSTDERR);
 
                 arguments[0] = this;
                 arguments[1] = endpoint;
@@ -497,124 +559,148 @@ void
 Service::logger_body(PipeEndpoint *endpoint)
 {
         HANDLE hStdout = INVALID_HANDLE_VALUE;
-        PipeEndpoint *endpoints[8] = {0};
-        HANDLE handles[1 + 8] = {0};
+#define ENDPOINT_MAX  63
+        std::vector<PipeEndpoint *> connections;
+        PipeEndpoint *endpoints[ENDPOINT_MAX];
+        HANDLE handles[64];
+        unsigned pollidx = 0;
         bool terminate = false;
-        DWORD inst = 0;
 
-        handles[0] = logger_stop_event_;        // exit event
-
-        endpoints[inst] = endpoint;             // endpoint
-        handles[++inst] = endpoint->ioevent;    // completion event
+        connections.push_back(endpoint);
 
         if (options_.console_output) {
                 hStdout = ::CreateFileA("CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, NULL);
         }
 
         for (;;) {
+                // rearm
+
                 if (endpoint) {
-                        endpoint->CompletionSetup();
-                        endpoint = 0;
+                        if (! endpoint->CompletionSetup()) {
+                                auto it = std::find(connections.begin(), connections.end(), endpoint);
+                                if (it != connections.end()) {
+                                        connections.erase(it);
+                                        delete endpoint;
+                                }
+                        }
+                        endpoint = nullptr;
                 }
 
-                const DWORD dwWait =            // XXX: client limit 63
-                        ::WaitForMultipleObjects(inst + 1, handles, FALSE, terminate ? 100 : INFINITE);
+                // build handles [round robin/limit handles]
+
+                DWORD cnt = 0;
+
+                handles[0] = logger_stop_event_;
+
+                if (pollidx >= connections.size())
+                        pollidx = 0;            // reseed
+
+                for (unsigned c = pollidx; c < connections.size() && cnt < ENDPOINT_MAX; ++c) {
+                        endpoints[cnt] = connections[c];
+                        handles[++cnt] = connections[c]->ioevent;
+                }
+
+                for (unsigned c = 0; c < pollidx && cnt < ENDPOINT_MAX; ++c) {
+                        endpoints[cnt] = connections[c];
+                        handles[++cnt] = connections[c]->ioevent;
+                }
+
+                assert(cnt == connections.size() || cnt == ENDPOINT_MAX);
+                ++pollidx;
+
+                // poll
+
+                const DWORD dwWait =
+                        ::WaitForMultipleObjects(cnt + 1, handles, FALSE, terminate ? 100 : INFINITE);
 
 #define WAIT_OBJECT_1       (WAIT_OBJECT_0 + 1)
 #define WAIT_ABANDONED_1    (WAIT_ABANDONED_0 + 1)
 
-                if (dwWait >= WAIT_OBJECT_1 && dwWait < (WAIT_OBJECT_1 + inst)) {
-                const unsigned idx = dwWait - WAIT_OBJECT_1;
-                DWORD dwRead = 0;
+                if (dwWait >= WAIT_OBJECT_1 && dwWait < (WAIT_OBJECT_1 + cnt)) {
+                        const unsigned idx = dwWait - WAIT_OBJECT_1;
+                        bool eof = false;
 
-                endpoint = endpoints[idx];
-                assert(handles[idx + 1] == endpoint->ioevent);
+                        endpoint = endpoints[idx];
+                        assert(handles[idx + 1] == endpoint->ioevent);
 
-                if (endpoint->CompletionResults(dwRead)) {
-                        switch (endpoint->state) {
-                        case PipeEndpoint::EP_CONNECT:
+                        if (endpoint->CompletionResults()) {
+                                switch (endpoint->state) {
+                                case PipeEndpoint::EP_CONNECT:
 
-                                // Connected
+                                        // Connected
 
-                                endpoint->state = PipeEndpoint::EP_READY;
-                                endpoint->CompletionSetup();
+                                        endpoint->state = PipeEndpoint::EP_READY;
+                                        endpoint->CompletionSetup();
 
-                                // Create new endpoint
+                                        // Create new endpoint
 
-                                if (inst < _countof(endpoints)) {
                                         if (0 == NewPipeEndpoint(pipe_name_, endpoint)) {
-                                                endpoints[inst] = endpoint;
-                                                handles[++inst] = endpoint->ioevent;
+                                                connections.push_back(endpoint);
                                         }
-                                }
-                                break;
+                                        break;
 
-                        case PipeEndpoint::EP_READING:
-                                if (dwRead) {
-                                        const char *scan = endpoint->cursor;
-                                        DWORD dwPopped = 0;     // note: first scan need only be against additional characters.
+                                case PipeEndpoint::EP_READING:
+                                        if (const char *scan = endpoint->pushed(eof)) {
+                                                DWORD dwPopped = 0; // note: first scan need only be against additional characters.
 
-                                        endpoint->pushed(dwRead);
-                                        for (const char *line = endpoint->buffer, *nl;
-                                                NULL != (nl = strchr(scan, '\n')); scan = line = nl) {
-                                                unsigned sz = nl - line;
+                                                for (const char *line = endpoint->buffer, *nl;
+                                                        NULL != (nl = strchr(scan, '\n')); scan = line = nl) {
+                                                        unsigned sz = nl - line;
 
-                                                if (sz) {
-                                                        unsigned t_sz = sz;
+                                                        if (sz) {
+                                                                unsigned t_sz = sz;
 
-                                                        if ('\r' == line[t_sz-1]) --t_sz; // \r\n
-                                                        if (t_sz) {
-                                                                ServiceDiags::Adapter::push(logger_, ServiceDiags::Adapter::LLTRACE, line, t_sz);
-                                                                if (INVALID_HANDLE_VALUE != hStdout) {
-                                                                        if (! ::WriteConsoleA(hStdout, line, sz + 1, NULL, NULL)) {
-                                                                                ::CloseHandle(hStdout);
-                                                                                hStdout = INVALID_HANDLE_VALUE;
+                                                                if ('\r' == line[t_sz-1]) --t_sz; // \r\n
+                                                                if (t_sz) {
+                                                                        ServiceDiags::Adapter::push(logger_, endpoint->log_level(), line, t_sz);
+                                                                        if (INVALID_HANDLE_VALUE != hStdout) {
+                                                                                if (! ::WriteConsoleA(hStdout, line, sz + 1, NULL, NULL)) {
+                                                                                        ::CloseHandle(hStdout);
+                                                                                        hStdout = INVALID_HANDLE_VALUE;
                                                                                         // TODO: move into logger, as console may block.
+                                                                                }
                                                                         }
                                                                 }
                                                         }
+
+                                                        ++nl, ++sz; // consume newline
+                                                        if ('\r' == *nl) { // \n\r
+                                                                ++nl, ++sz; // consume optional return
+                                                        }
+
+                                                        dwPopped += sz;
                                                 }
 
-                                                ++nl, ++sz; // consume newline
-                                                if ('\r' == *nl) { // \n\r
-                                                        ++nl, ++sz; // consume optional return
+                                                if (dwPopped) { // pop consumed characters
+                                                        endpoint->pop(dwPopped);
+                                                } else if (0 == endpoint->avail || (eof && endpoint->length())) { // otherwise on buffer full or eof; flush
+                                                        ServiceDiags::Adapter::push(logger_, endpoint->log_level(), endpoint->buffer, endpoint->length());
+                                                        if (INVALID_HANDLE_VALUE != hStdout) {
+                                                                ::WriteConsoleA(hStdout, endpoint->buffer, endpoint->size, NULL, NULL);
+                                                        }
+                                                        endpoint->reset();
                                                 }
-
-                                                dwPopped += sz;
                                         }
+                                        endpoint->state = PipeEndpoint::EP_READY; //re-arm reader
+                                        break;
 
-                                        if (dwPopped) { // pop consumed characters
-                                                endpoint->popped(dwPopped);
-                                        } else if (0 == endpoint->avail) {
-                                                // otherwise on buffer full; flush
-                                                ServiceDiags::Adapter::push(logger_, ServiceDiags::Adapter::LLTRACE, endpoint->buffer, endpoint->size);
-                                                if (INVALID_HANDLE_VALUE != hStdout) {
-                                                        ::WriteConsoleA(hStdout, endpoint->buffer, endpoint->size, NULL, NULL);
-                                                }
-                                                endpoint->reset();
-                                        }
-
-                                        endpoint->state = PipeEndpoint::EP_READY;
+                                default:
+                                        diags().ferror("unexpected endpoint state : %u", (unsigned)endpoint->state);
+                                        assert(false);
+                                        break;
                                 }
-                                break;
 
-                        default:
-                                diags().ferror("unexpected endpoint state : %u", (unsigned)endpoint->state);
+                        } else {
+                                DWORD dwError = GetLastError();
+                                diags().ferror("unexpected io completion : %u", (unsigned)dwError);
                                 assert(false);
-                                break;
                         }
-
-                } else {
-                        DWORD dwError = GetLastError();
-                        diags().ferror("unexpected io completion : %u", (unsigned)dwError);
-                        assert(false);
-                }
 
                 } else if (dwWait == WAIT_OBJECT_0) {
                         ::ResetEvent(logger_stop_event_);
                         terminate = true;       // drain stream, then exit
 
-                } else if (dwWait >= WAIT_ABANDONED_1 && dwWait < (WAIT_ABANDONED_1 + inst)) {
+                } else if (dwWait >= WAIT_ABANDONED_1 && dwWait < (WAIT_ABANDONED_1 + cnt)) {
                         const unsigned idx = dwWait - WAIT_ABANDONED_1;
 
                         endpoint = endpoints[idx];
@@ -890,3 +976,4 @@ Service::ConfigGet(const char *csKey, DWORD &dwValue, unsigned flags)
 }
 
 //end
+
