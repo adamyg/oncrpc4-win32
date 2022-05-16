@@ -1,0 +1,155 @@
+#!/usr/bin/perl
+# $Id: makelib.in,v 1.2 2022/05/16 02:39:39 cvsuser Exp $
+# -*- mode: perl; tabs: 8; indent-width: 4; -*-
+# makelib configuration
+#
+# Copyright (c) 2020 - 2022, Adam Young.
+# All rights reserved.
+#
+# This file is part of oncrpc4-win32.
+#
+# The applications are free software: you can redistribute it
+# and/or modify it under the terms of the oncrpc4-win32 License.
+#
+# Redistributions of source code must retain the above copyright
+# notice, and must be distributed with the license document above.
+#
+# Redistributions in binary form must reproduce the above copyright
+# notice, and must include the license document above in
+# the documentation and/or other materials provided with the
+# distribution.
+#
+# This project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the Licence for details.
+# ==end==
+#
+
+## Package
+
+$PACKAGE        = 'oncrpc4-win32';
+$PACKAGE_NAME   = 'windows oncrpc4 library and service';
+$PACKAGE_VERSION = '0.1.1';
+
+$PACKAGE_URL    = 'https://github.com/adamyg/oncrpc4-win32';
+
+$PACKAGE_PATH   = 'liboncrpc';
+$PACKAGE_FILE   = 'package.h';
+
+## External
+
+@LIBRARIES      = (    # local libraries -l<xxx> lib<xxx>.lib
+        'compat',
+        'sthread',
+        'oncrpc',
+        'NTService'
+        );
+
+@LIBRARIES2     = (    # local libraries -l<xxx> xxx.lib
+        );
+
+@OPTLIBRARIES   = ();  # optional libraries
+
+## Makefiles
+
+@MAKEFILES      = (    # local makefiles
+        '.',                                            # build order
+        'libcompat',
+        'libsthread',
+        'libNTService',
+        'liboncrpc',
+        'ucpp',
+        'rpcgen',
+        'rpcbind',
+        'rpcinfo'
+        );
+
+## Toolchain
+
+sub
+Configure()
+{
+        ################################################################################
+        # Common
+
+        add_xinclude('$(ROOT)/liboncrpc');              # support
+        add_xinclude('$(ROOT)/libsrc/win32');           # ONCRPC include's
+        add_xinclude('$(ROOT)/libcompat');              # compat interface
+
+        ################################################################################
+        # Visual studio
+
+        if ($TOOLCHAIN =~ /^vs/) {
+
+                set_msvc_runtime('dynamic', '$(RTSUFFIX)');
+
+                remove_define('WIN32');
+                add_define('HAVE_CONFIG_H');
+                add_define('_WIN32_WINNT=0x600');       # Windows SDK
+                add_define('_CRT_SECURE_NO_WARNINGS');
+                add_define('_CRT_SECURE_NO_DEPRECATE');
+                add_define('_CRT_NONSTDC_NO_DEPRECATE');
+        }
+
+        ################################################################################
+        # OpenWatcom
+
+        if ($TOOLCHAIN =~ /^owc/) {
+
+                remove_define('WIN32');
+                add_define('HAVE_CONFIG_H');
+                add_define('_WIN32_WINNT=0x600');       # Windows SDK
+        }
+}
+
+
+# Example usage
+#
+#   # Configuration
+#   ifeq ("$(BUILD_TYPE)","")   #default
+#   BUILD_TYPE= debug
+#   MAKEFLAGS+= BUILD_TYPE=debug
+#   endif
+#   ifneq ("$(BUILD_TYPE)","release")
+#   # MSVC Run-time suffix
+#   RTSUFFIX=d
+#   endif
+#
+#   # Common flags
+#   XFLAGS=
+#   CFLAGS=         @CFLAGS@
+#   CWARN=          @CWARN@ $(CWALL)
+#   CDEBUG=         @CDEBUG@
+#   CRELEASE=       @CRELEASE@
+#
+#   CXXFLAGS=       @CXXFLAGS@
+#   CXXDEBUG=       @CXXDEBUG@
+#   ifeq ("$(CXXDEBUG)","")
+#   CXXDEBUG=       $(CDEBUG)
+#   endif
+#   CXXRELEASE=     @CXXRELEASE@
+#   ifeq ("$(CXXRELEASE)","")
+#   CXXRELEASE=     $(CRELEASE)
+#   endif
+#
+#   LDDEBUG=        @LDDEBUG@
+#   LDRELEASE=      @LDRELEASE@
+#
+#   CINCLUDE=       <additional> @CINCLUDE@
+#   CEXTRA=         @DEFS@ <additional>
+#
+#   ifeq ("$(BUILD_TYPE)","release")
+#   CFLAGS+=        $(CRELEASE) $(CWARN) $(CINCLUDE) $(CEXTRA) $(XFLAGS)
+#   CXXFLAGS+=      $(CXXRELEASE) $(CWARN) $(CINCLUDE) @CXXINCLUDE@ $(CEXTRA) $(XFLAGS)
+#   LDFLAGS=        $(LDRELEASE) @LDFLAGS@
+#   else
+#   CFLAGS+=        $(CDEBUG) $(CWARN) $(CINCLUDE) $(CEXTRA) $(XFLAGS)
+#   CXXFLAGS+=      $(CXXDEBUG) $(CWARN) $(CINCLUDE) @CXXINCLUDE@ $(CEXTRA) $(XFLAGS)
+#   LDFLAGS=        $(LDDEBUG) @LDFLAGS@
+#   endif
+#   LDLIBS=         -L$(D_LIB) @LDLIBS@ @LIBS@ @EXTRALIBS@
+#
+
+1;
+

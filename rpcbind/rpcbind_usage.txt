@@ -1,0 +1,92 @@
+
+
+NAME
+
+     rpcbind -- universal addresses to RPC program number mapper
+
+
+SYNOPSIS
+
+     rpcbind [-6adiLlsWw] [-h bindip]
+
+
+DESCRIPTION
+
+     The rpcbind utility is a server that converts RPC program numbers into
+     universal addresses.  It must be running on the host to be able to make
+     RPC calls on a server on that machine.
+
+     When an RPC service is started, it tells rpcbind the address at which it
+     is listening, and the RPC program numbers it is prepared to serve.  When
+     a client wishes to make an RPC call to a given program number, it first
+     contacts rpcbind on the server machine to determine the address where RPC
+     requests should be sent.
+
+     The rpcbind utility should be started before any other RPC service.  Nor-
+     mally, standard RPC servers are started by port monitors, so rpcbind must
+     be started before port monitors are invoked.
+
+     When rpcbind is started, it checks that certain name-to-address transla-
+     tion-calls function correctly.  If they fail, the network configuration
+     databases may be corrupt.  Since RPC services cannot function correctly
+     in this situation, rpcbind reports the condition and terminates.
+
+     The rpcbind utility can only be started by the super-user.
+
+     Access control is provided by /etc/hosts.allow and /etc/hosts.deny, as
+     described in hosts_access(5) with daemon name rpcbind.
+
+OPTIONS
+
+     -6      Bind to AF_INET6 (IPv6) addresses only.
+
+     -a      When debugging (-d), abort on errors.
+
+     -d      Run in debug mode.  In this mode, will print additional information
+	         during operation, and will abort on certain errors if -a is also
+			 specified.  With this option, the name-to-address translation 
+			 consistency checks are shown in detail.
+
+     -h bindip
+             IP addresses to bind to when servicing TCP and UDP requests.
+             This option may be specified multiple times and is typically nec-
+             essary when running on a multi-homed host.  If no -h option is
+             specified, rpcbind will bind to INADDR_ANY, which could lead to
+             problems on a multi-homed host due to rpcbind returning a UDP
+             packet from a different IP address than it was sent to.  Note
+             that when specifying IP addresses with -h, rpcbind will automati-
+             cally add 127.0.0.1 and if IPv6 is enabled, ::1 to the list.
+
+     -i      ``Insecure'' mode.  Allows calls to SET and UNSET from any host.
+             Normally rpcbind accepts these requests only from the loopback
+             interface for security reasons.  This change is necessary for
+             programs that were compiled with earlier versions of the rpc
+             library and do not make those requests using the loopback inter-
+             face.
+
+     -L      Allows old-style local connections over the loopback interface.
+             Without this flag, local connections are only allowed over a
+             local socket (named pipe), /var/run/rpcbind.sock.
+
+     -l      Turns on libwrap connection logging [not supported].
+
+     -s      Causes rpcbind to change to the user daemon as soon as possible.
+             This causes rpcbind to use non-privileged ports for outgoing con-
+             nections, preventing non-privileged clients from using rpcbind to
+             connect to services from a privileged port [not supported].
+
+     -W      Enable libwrap (TCP wrappers) support [not supported].
+
+     -w      Enable the warmstart feature [not supported].
+
+             The warmstart feature saves RPC registrations on termination.
+             Any saved RPC registrations are restored on restart if -w is
+             specified.  This feature helps avoid RPC service interruption
+             when restarting rpcbind.  warmstart support must be compiled in
+             to rpcbind.  Portmap registrations are stored in
+             /tmp/portmap.file.  rpcbind registrations are stored in
+             /tmp/rpcbind.file.
+
+NOTES
+
+     All RPC servers must be restarted if rpcbind is restarted.
