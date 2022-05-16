@@ -49,7 +49,7 @@ static int pipe_create(int type);
 static int pipe_bind(struct Pipe *pipe, const struct sockaddr *addr, socklen_t addrlen);
 static int pipe_listen(struct Pipe *pipe);
 static int pipe_connect(struct Pipe *pipe, const struct sockaddr *addr, socklen_t addrlen);
-static int pipe_accept(int pipefd, struct Pipe *pipe);
+static int pipe_accept(int pipefd, struct Pipe *pipe, struct sockaddr *addr, int *addrlen);
 static int pipe_ioctlsocket(struct Pipe *pipe, long cmd, u_long *argp);
 static int pipe_io_read(struct Pipe *pipe);
 static int pipe_io_complete(struct Pipe *pipe);
@@ -492,7 +492,7 @@ rpc_accept(int sockfd, struct sockaddr *addr, int *addrlen)
 			sock->revents = 0;
 		}
 	} else if ((pipe = ispipefd(sockfd)) != NULL) {
-		ret = pipe_accept(sockfd, pipe);
+		ret = pipe_accept(sockfd, pipe, addr, addrlen);
 	} else {
 		assert(0);
 		errno = EBADF;
@@ -994,7 +994,7 @@ pipe_connect(struct Pipe *pipe, const struct sockaddr *addr, socklen_t addrlen)
 
 
 static int
-pipe_accept(int sockfd, struct Pipe *pipe)
+pipe_accept(int sockfd, struct Pipe *pipe, struct sockaddr *addr, int *addrlen)
 {
 	DWORD result = 0;
 	int rtn = -1;
@@ -1015,6 +1015,9 @@ pipe_accept(int sockfd, struct Pipe *pipe)
 			pipe_listen(newpipe);
 			pipe->listen = FALSE;
 			pipe_io_read(pipe);
+			if (addr && addrlen) {
+				pipe_getpeername(pipe, addr, addrlen);
+			}
 
 		} else { // error, rearm original.
 			CloseHandle(pipe->handle);
@@ -1248,6 +1251,7 @@ pipe_getsockname(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen)
 		return -1;
 	}
 
+	assert(AF_LOCAL == pipe->addr.sun_family);
 	*(struct sockaddr_un *)addr = pipe->addr;
 	*addrlen = sizeof(struct sockaddr_un);
 	return 0;
@@ -1268,6 +1272,7 @@ pipe_getpeername(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen)
 		return -1;
 	}
 
+	assert(AF_LOCAL == pipe->addr.sun_family);
 	*(struct sockaddr_un *)addr = pipe->addr;
 	*addrlen = sizeof(struct sockaddr_un);
 	return 0;
@@ -1321,7 +1326,7 @@ rpc_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	struct Socket *sock;
 	struct Pipe *pipe = NULL;
 	SHORT revents = 0;
-	size_t i;
+	size_t pipes = 0, n;
 	int ret = 0;
 
 	assert(FD_SETSIZE <= 64);
@@ -1332,46 +1337,50 @@ rpc_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	}
 
 	__DTRACE(("poll(%p,%u,%d)\n", fds, nfds, timeout))
-	for (i = 0; i < nfds; ++i) {
-		const SHORT events = fds[i].events;
+	for (n = 0; n < nfds; ++n) {
+		const SHORT events = fds[n].events;
+		const int fd = fds[n].fd;
 
-		t_fds[i].events = events;
-		fds[i].revents = 0;
+		t_fds[n].events = events;
+		fds[n].revents = 0;
 
-		if ((sock = issockfd(fds[i].fd)) != NULL) {
-			t_fds[i].fd = sock->handle;
-			resources[i].sock = sock;
-			handles[i] = sock->wsaevt;
+		if ((sock = issockfd(fd)) != NULL) {
+			t_fds[n].fd = sock->handle;
+			resources[n].sock = sock;
+			handles[n] = sock->wsaevt;
 			if ((revents = (sock->revents & events)) != 0) {
-				fds[i].revents = revents;
+				fds[n].revents = revents;
 				++ret;
 			}
 
-		} else if ((pipe = ispipefd(fds[i].fd)) != NULL) {
-			resources[i].pipe = pipe;
-			handles[i] = pipe->ov.hEvent;
+		} else if ((pipe = ispipefd(fd)) != NULL) {
+			resources[n].pipe = pipe;
+			handles[n] = pipe->ov.hEvent;
 			if ((revents = (pipe->rdevents & events)) != 0) {
-				fds[i].revents = revents;
+				fds[n].revents = revents;
 				++ret;
 			}
+			++pipes;
 
 		} else {
+			__DTRACE(("poll(%p) : %d (fd[%d] == EBADF)\n", fds, fd, n))
 			assert(0);
 			errno = EBADF;
 			return -1;
 		}
 	}
 
-	if (pipe && ret > 0 /*one or more pipes, plus local events pending*/) {
+	if (pipes && ret > 0 /*one or more pipes, plus local events pending*/) {
 		__DTRACE(("poll(%p) : %d [pipes]\n", fds, ret))
 		return ret;
 	}
 
-	if (pipe) {
+	if (pipes) {
+		const DWORD waittm = (timeout < 0 ? INFINITE : timeout);
 		DWORD evt;
 
-		__DTRACE(("poll(%p) : wait-events (%d,%d)\n", fds, nfds, timeout))
-		if ((evt = WSAWaitForMultipleEvents(nfds, handles, FALSE, timeout, TRUE)) >= WSA_WAIT_EVENT_0 &&
+		__DTRACE(("poll(%p) : wait-events (%d,%u)\n", fds, nfds, waittm))
+		if ((evt = WSAWaitForMultipleEvents(nfds, handles, FALSE, waittm, TRUE)) >= WSA_WAIT_EVENT_0 &&
 				evt < (STATUS_WAIT_0 + nfds)) {
 			const SHORT events = fds[evt -= WSA_WAIT_EVENT_0].events | POLLHUP | POLLERR | POLLNVAL;
 
@@ -1439,8 +1448,8 @@ rpc_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 			wsaerrno();
 		}
 
-		for (i = 0; i < nfds; ++i) {
-		    fds[i].revents = t_fds[i].revents = 0;
+		for (n = 0; n < nfds; ++n) {
+		    fds[n].revents = t_fds[n].revents = 0;
 		}
 	}
 
@@ -1453,11 +1462,49 @@ int
 rpc_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
 {
 #undef select
+	struct pollfd fds[FD_SETSIZE] = { 0 };
+	SOCKET *fd_array;
+	nfds_t n;
+	int polltm = -1;
 	int ret;
 
-	assert(0);
-	if ((ret = select(nfds, readfds, writefds, exceptfds, timeout)) == SOCKET_ERROR) {
-		wsaerrno();
+	// XXX: current rpc usage (readfds only).
+	// XXX: unless changed poll() is the default interface (see: svc_run)
+        assert(0 == nfds);
+	assert(NULL == writefds && NULL == exceptfds);
+	if (writefds || exceptfds) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	assert(readfds);
+	if (NULL == readfds) {
+		errno = EINVAL;
+		return -1;
+	}
+
+        nfds = readfds->fd_count;
+	fd_array = readfds->fd_array;
+	for (n = 0; n < nfds; ++n) {
+		fds[n].fd = fd_array[n];
+		fds[n].events = POLLIN;
+	}
+
+	if (timeout) {
+		polltm = (timeout->tv_sec * 1000) + (timeout->tv_usec / 1000);
+        }
+
+       	FD_ZERO(readfds);
+	if ((ret = rpc_poll(fds, nfds, polltm)) > 0) {
+		int t_ret = 0;
+		for (n = 0; n < nfds; ++n) {
+			if (fds[n].revents) {
+				fd_array[t_ret++] =  fds[n].fd;
+			}
+		}
+        	readfds->fd_count = t_ret;
+		assert(t_ret == ret);
+		ret = t_ret;
 	}
 	return ret;
 }

@@ -30,16 +30,4 @@
 #include <sys/utypes.h>
 #include <rpc_win32.h>
 
-#if defined(_WIN32)
-#define SOCKLEN_SOCKADDR(__sa) (AF_INET6 == __sa.sa_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
-#define SOCKLEN_SOCKADDR_PTR(__sa) (AF_INET6 == __sa->sa_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
-#define SOCKLEN_SOCKADDR_STORAGE(__ss) (AF_INET6 == __ss.ss_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
-#define SOCKLEN_SOCKADDR_STORAGE_PTR(__ss) (AF_INET6 == __ss->ss_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
-#else
-#define SOCKLEN_SOCKADDR(__sa) __sa.sa_len
-#define SOCKLEN_SOCKADDR_PTR(__sa) __sa->sa_len
-#define SOCKLEN_SOCKADDR_STORAGE(__ss) __ss.ss_len
-#define SOCKLEN_SOCKADDR_STORAGE_PTR(__ss) __ss->ss_len
-#endif
-
 /*end*/

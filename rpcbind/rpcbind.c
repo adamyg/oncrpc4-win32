@@ -550,7 +550,7 @@ init_transport(struct netconfig *nconf)
 				struct netbuf nb;
 
 				nb.buf = sa;
-				nb.len = nb.maxlen = sa->sa_len;
+				nb.len = nb.maxlen = SOCKLEN_SOCKADDR_PTR(sa);
 				uaddr = taddr2uaddr(nconf, &nb);
 				(void)fprintf(stderr,
 				    "rpcbind : my address is %s\n", uaddr);
@@ -607,7 +607,7 @@ init_transport(struct netconfig *nconf)
 			struct netbuf nb;
 
 			nb.buf = sa;
-			nb.len = nb.maxlen = sa->sa_len;
+			nb.len = nb.maxlen = SOCKLEN_SOCKADDR_PTR(sa);
 			uaddr = taddr2uaddr(nconf, &nb);
 			(void) fprintf(stderr, "rpcbind : my address is %s\n",
 			    uaddr);

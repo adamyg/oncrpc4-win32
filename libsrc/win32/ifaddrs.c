@@ -63,7 +63,7 @@ getifaddrs(struct ifaddrs **ifap)
 		return -1;
 	}
 
-	if (NULL == (root = malloc(size)))
+	if (NULL == (root = calloc(1, size)))
 		return -1;
 	ret = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, root, &size);
 	if (ret != ERROR_SUCCESS) {

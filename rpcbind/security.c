@@ -165,7 +165,7 @@ is_loopback(struct netbuf *nbuf)
 		return (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr) &&
 		    (ntohs(sin6->sin6_port) < IPV6PORT_RESERVED));
 #endif
-#if defined(AF_LOCAL)
+#if defined(AF_LOCAL) /*WIN32*/
 	case AF_LOCAL:
 		return 1;
 #endif
@@ -185,7 +185,7 @@ logit(int severity, struct sockaddr *addr, rpcproc_t procnum, rpcprog_t prognum,
 	char	procbuf[32];
 	char   *progname;
 	char	progbuf[32];
-	char fromname[NI_MAXHOST];
+	char fromname[NI_MAXHOST] = "unknown"; /*WIN32*/
 	struct rpcent *rpc;
 	static const char *procmap[] = {
 	/* RPCBPROC_NULL */		"null",
@@ -208,7 +208,7 @@ logit(int severity, struct sockaddr *addr, rpcproc_t procnum, rpcprog_t prognum,
 	 * getrpcbynumber() or syslog() does its thing.
 	 */
 
-#if !defined(_WIN32) //TODO: exec thread
+#if !defined(_WIN32) /*XXX: exec thread ? */
 	if (fork() == 0) {
 		setproctitle("logit");
 #endif
@@ -235,7 +235,7 @@ logit(int severity, struct sockaddr *addr, rpcproc_t procnum, rpcprog_t prognum,
 
 		/* Write syslog record. */
 
-#if defined(AF_LOCAL)
+#if defined(AF_LOCAL) /*WIN32*/
 		if (addr->sa_family == AF_LOCAL)
 			strlcpy(fromname, "local", sizeof(fromname));
 		else

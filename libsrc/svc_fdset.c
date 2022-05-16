@@ -260,9 +260,11 @@ svc_fdset_resize(int fd, struct svc_fdset *fds)
 			return fds;
 		}
 	}
-	assert(fds->fdsize == FD_SETSIZE);
-	assert(fds->fdset->fd_count < FD_SETSIZE);
-	return (fds->fdset->fd_count < FD_SETSIZE ? fds : NULL);
+	assert(fds->fdsize >= FD_SETSIZE);
+	while (fd > fds->fdsize) // inc by FD_SETSIZE units.
+                fds->fdsize += FD_SETSIZE;
+	assert(fds->fdset->fd_count <= FD_SETSIZE);
+	return fds;
 
 #else
 	if (fds->fdset && fd < fds->fdsize) {
@@ -338,7 +340,8 @@ svc_fdset_zero(void)
 	if (fds == NULL)
 		return;
 #if defined(_WIN32)
-	if (fds->fdset) memset(fds->fdset, 0, sizeof(*fds->fdset));
+	if (fds->fdset)
+		memset(fds->fdset, 0, sizeof(*fds->fdset));
 #else
 	memset(fds->fdset, 0, fds->fdsize);
 #endif
@@ -357,6 +360,11 @@ svc_fdset_set(int fd)
 	if (fds == NULL)
 		return -1;
 
+#if defined(_WIN32)
+	assert(fds->fdset->fd_count < FD_SETSIZE);
+	if (fds->fdset->fd_count >= FD_SETSIZE)
+		return -1;
+#endif
 	FD_SET(fd, fds->fdset);
 	if (fd > fds->fdmax)
 		fds->fdmax = fd;

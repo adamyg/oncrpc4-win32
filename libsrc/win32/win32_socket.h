@@ -67,6 +67,11 @@ LIBRPC_API int rpc_getnameinfo(const struct sockaddr *addr, socklen_t addrlen, c
 
 __END_DECLS
 
+#define INET6                                   /* enable AF_INET6 support */
+#if !defined(IPV6PORT_RESERVED)
+#define	IPV6PORT_RESERVED 1024
+#endif
+
 #if (defined(LIBRPC_LIBRARY) || defined(LIBRPC_SOURCE)) && !defined(LIBRPC_NO_SOCKET_MAPPINGS)
 
 #if (1)
@@ -122,5 +127,20 @@ __END_DECLS
 #define getnameinfo(a__, b__, c__, d__, e__, f__, g__) rpc_getnameinfo(a__, b__, c__, d__, e__, f__, g__)
 
 #endif /*LIBRPC_LIBRARY||LIBRPC_WIN32_SOCKET*/
+
+/*
+ *  sockaddr support
+ */
+#if defined(_WIN32)
+#define SOCKLEN_SOCKADDR(__sa) (AF_INET6 == __sa.sa_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
+#define SOCKLEN_SOCKADDR_PTR(__sa) (AF_INET6 == __sa->sa_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
+#define SOCKLEN_SOCKADDR_STORAGE(__ss) (AF_INET6 == __ss.ss_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
+#define SOCKLEN_SOCKADDR_STORAGE_PTR(__ss) (AF_INET6 == __ss->ss_family ? sizeof(struct sockaddr_in6) :  sizeof(struct sockaddr_in))
+#else
+#define SOCKLEN_SOCKADDR(__sa) __sa.sa_len
+#define SOCKLEN_SOCKADDR_PTR(__sa) __sa->sa_len
+#define SOCKLEN_SOCKADDR_STORAGE(__ss) __ss.ss_len
+#define SOCKLEN_SOCKADDR_STORAGE_PTR(__ss) __ss->ss_len
+#endif
 
 /*end*/

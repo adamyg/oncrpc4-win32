@@ -178,8 +178,8 @@ svc_vc_create(const int fd, const u_int sendsize, const u_int recvsize)
 	/*
 	 * We want to be able to check credentials on local sockets.
 	 */
-#if !defined(_WIN32)
 #ifdef AF_LOCAL /*WIN32*/
+#if defined(LOCAL_CREDS)
 	if (sslocal.ss_family == AF_LOCAL)
 		if (setsockopt(fd, 0, LOCAL_CREDS, &one, (socklen_t)sizeof one) == -1)
 			goto cleanup_svc_vc_create;

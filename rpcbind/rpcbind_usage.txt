@@ -1,5 +1,4 @@
 
-
 NAME
 
      rpcbind -- universal addresses to RPC program number mapper
@@ -68,16 +67,16 @@ OPTIONS
              Without this flag, local connections are only allowed over a
              local socket (named pipe), /var/run/rpcbind.sock.
 
-     -l      Turns on libwrap connection logging [not supported].
+     -l      Turns on libwrap connection logging [WIN32 not applicable].
 
      -s      Causes rpcbind to change to the user daemon as soon as possible.
              This causes rpcbind to use non-privileged ports for outgoing con-
              nections, preventing non-privileged clients from using rpcbind to
              connect to services from a privileged port [not supported].
 
-     -W      Enable libwrap (TCP wrappers) support [not supported].
+     -W      Enable libwrap (TCP wrappers) support [WIN32 not applicable].
 
-     -w      Enable the warmstart feature [not supported].
+     -w      Enable the warmstart feature [not enabled].
 
              The warmstart feature saves RPC registrations on termination.
              Any saved RPC registrations are restored on restart if -w is

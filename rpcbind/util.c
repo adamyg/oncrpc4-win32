@@ -213,7 +213,9 @@ addrmerge(struct netbuf *caller, char *serv_uaddr, char *clnt_uaddr,
 			 */
 			realsin6 = (struct sockaddr_in6 *)clnt;
 			ifsin6 = (struct sockaddr_in6 *)ifap->ifa_addr;
+#if !defined(_WIN32) /*XXX*/
 			inet6_getscopeid(ifsin6, 1);
+#endif
 			clntsin6 = (struct sockaddr_in6 *)clnt_sa;
 			servsin6 = (struct sockaddr_in6 *)serv_sa;
 			sin6mask = (struct sockaddr_in6 *)ifap->ifa_netmask;
@@ -221,8 +223,7 @@ addrmerge(struct netbuf *caller, char *serv_uaddr, char *clnt_uaddr,
 			if (IN6_IS_ADDR_LINKLOCAL(&ifsin6->sin6_addr) &&
 			    IN6_IS_ADDR_LINKLOCAL(&realsin6->sin6_addr) &&
 			    IN6_IS_ADDR_LINKLOCAL(&clntsin6->sin6_addr)) {
-				if (ifsin6->sin6_scope_id !=
-				    realsin6->sin6_scope_id)
+				if (ifsin6->sin6_scope_id != realsin6->sin6_scope_id)
 					continue;
 				goto found;
 			}
@@ -276,10 +277,10 @@ found:
 		break;				
 #ifdef INET6
 	case AF_INET6:
-		memcpy(newsin6, ifsin6, clnt_sa->sa_len);
+		memcpy(newsin6, ifsin6, SOCKLEN_SOCKADDR_PTR(clnt_sa));
 		newsin6->sin6_port = servsin6->sin6_port;
 		tbuf.maxlen = sizeof (struct sockaddr_storage);
-		tbuf.len = clnt_sa->sa_len;
+		tbuf.len = SOCKLEN_SOCKADDR_PTR(clnt_sa);
 		tbuf.buf = newsin6;
 		break;
 #endif
@@ -364,6 +365,10 @@ network_init()
 	 * If so, we have found the interface that we want to use.
 	 */
 	for (ifap = ifp; ifap != NULL; ifap = ifap->ifa_next) {
+#if defined(_WIN32)
+		if (NULL == ifap->ifa_addr)
+			continue;
+#endif
 		if (ifap->ifa_addr->sa_family != AF_INET6 ||
 		    !(ifap->ifa_flags & IFF_MULTICAST))
 			continue;

@@ -53,6 +53,9 @@
 #include "service_license.h"
 #include "bsd_license.h"
 
+#pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Iphlpapi.lib")
+
 #define OPTIONS         "UNhiV"                 // short arguments
 #define ARGUMENTS       "S:Z:p:"
 #define ARGUMENTDESCS   ""
