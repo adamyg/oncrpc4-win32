@@ -23,11 +23,9 @@
 /*
  * XXX for special case checks in check_callit.
  */
-#if !defined(_WIN32)
 #include <rpcsvc/mount.h>
 #include <rpcsvc/rquota.h>
 #include <rpcsvc/nfs_prot.h>
-#endif
 
 #ifdef YP
 #include <rpcsvc/yp.h>
@@ -276,22 +274,18 @@ check_callit(SVCXPRT *xprt, struct r_rmtcall_args *args, int versnum __unused)
 		if (!insecure)
 			goto deny;
 		break;
-#if !defined(_WIN32)
 	case MOUNTPROG:
 		if (args->rmt_proc != MOUNTPROC_MNT &&
 		    args->rmt_proc != MOUNTPROC_UMNT)
 			break;
 		goto deny;
-#endif
 	case YPBINDPROG:
 		if (args->rmt_proc != YPBINDPROC_SETDOM)
 			break;
 		/* FALLTHROUGH */
 	case YPPASSWDPROG:
-#if !defined(_WIN32)
 	case NFS_PROGRAM:
 	case RQUOTAPROG:
-#endif
 		goto deny;
 	case YPPROG:
 		switch (args->rmt_proc) {

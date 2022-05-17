@@ -98,7 +98,7 @@ main(int argc, const char **argv)
 	const char *service_name = CNTService::DefaultServiceName(argv[0], t_service_name, sizeof(t_service_name));
 
 	Service::Options options;
-	const char *arg0 = argv[0], *verb = NULL;
+	const char **oargv = argv, *verb = NULL;
 	unsigned do_info = 0;
 	int ch;
 
@@ -246,6 +246,7 @@ main(int argc, const char **argv)
 
 		} else {
 			service.LogError(true, "unexpected command <%s>, ignored", verb);
+			return EXIT_FAILURE;
 		}
 
 	} else {
@@ -254,20 +255,20 @@ main(int argc, const char **argv)
 		//
 		if (argc) {
 			--argv, ++argc;
-			if (argv[0] != arg0 && 0 != strcmp(argv[0], "--")) {
+			if (argv[0] != oargv[0] && 0 != strcmp(argv[0], "--")) {
 				service.LogMessage(msg[0] ? msg : "unexpected service option <%s>", argv[1]);
 				return EXIT_FAILURE;
 			}
-        	}
+		}
 	}
 
 	// Service entry
 
 	options.service_main = rpcservice_main;
 	options.service_shutdown = NULL;
-	options.arg0 = arg0;
+	options.arg0 = oargv[0];
 	options.argc = argc ? argc - 1 : 1;
-	options.argv = argc ? argv + 1 : argv;
+	options.argv = argc ? argv + 1 : oargv;
 
 	service.Start(options);
 

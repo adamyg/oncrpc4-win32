@@ -161,7 +161,7 @@ static const char *netconfig[] = {
 	"tcp6   tpi_cots_ord    v   inet6     tcp   -   -\n",
 	"udp    tpi_clts        v   inet      udp   -   -\n",
 	"tcp    tpi_cots_ord    v   inet      tcp   -   -\n",
-//	"rawip  tpi_raw         -   inet      -     -   -\n",
+//XXX  	"rawip  tpi_raw         -   inet      -     -   -\n",
 	"local  tpi_cots_ord    -   loopback  -     -   -\n"
 	};
 

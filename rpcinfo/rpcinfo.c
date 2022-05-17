@@ -336,7 +336,7 @@ local_rpcb(rpcprog_t prog, rpcvers_t vers)
 
 	in.sin_family = AF_INET;
 	in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	in.sin_port = htons(111); //portmapped/rpcbind
+    	in.sin_port = htons(PMAPPORT);
 	nbuf.len = sizeof (struct sockaddr_in);
 	nbuf.maxlen = sizeof (struct sockaddr_in);
 	nbuf.buf = &in;
@@ -1046,7 +1046,7 @@ rpcbgetstat(int argc, char **argv)
 		host = argv[0];
 		client = clnt_rpcbind_create(host, RPCBVERS4, NULL);
 	} else
-		client = local_rpcb(PMAP_PROG, RPCB_VERS4);
+		client = local_rpcb(PMAP_PROG, /*RPCB_VERS4,WIN32*/RPCBVERS4);
 	if (client == NULL)
 		errx(1, "Can't contact rpcbind (%s)",
 		    clnt_spcreateerror("") + 2);

@@ -42,9 +42,9 @@ OPTIONS
      -a      When debugging (-d), abort on errors.
 
      -d      Run in debug mode.  In this mode, will print additional information
-	         during operation, and will abort on certain errors if -a is also
-			 specified.  With this option, the name-to-address translation 
-			 consistency checks are shown in detail.
+             during operation, and will abort on certain errors if -a is also
+             specified.  With this option, the name-to-address translation 
+             consistency checks are shown in detail.
 
      -h bindip
              IP addresses to bind to when servicing TCP and UDP requests.
