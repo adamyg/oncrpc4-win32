@@ -1,11 +1,33 @@
+# Locals
+.makelib/
+CVS/
+msvc2015/
+ref/
+old/
+objects.*/
+lib.*/
+bin.*/
+*.ref/
+tarballs/
+Makefile 
+
+# Temps
+.#*
+*~
+
 # Prerequisites
 *.d
+*.log
+*.old
 
 # Compiled Object files
 *.slo
 *.lo
 *.o
 *.obj
+*.err
+*.mbr
+*.aps
 
 # Precompiled Headers
 *.gch
@@ -30,3 +52,5 @@
 *.exe
 *.out
 *.app
+*.bat
+
