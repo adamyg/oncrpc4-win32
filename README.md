@@ -1,3 +1,6 @@
+
+![workflow](https://github.com/adamyg/oncrpc4-win32/actions/workflows/build.yml/badge.svg)
+
 # oncrpc4-win32
 
 ONCRPC v4 for windows as described in [RFC 5531](https://tools.ietf.org/html/rfc5531) for distributing applications over one or more computers.
@@ -21,4 +24,5 @@ $ ./rpcinfo.exe
    100000    3    local     /var/run/rpcbind.sock  portmapper superuser
    100000    2    local     /var/run/rpcbind.sock  portmapper superuser
 ````
+
 
