@@ -952,11 +952,13 @@ static inline int read_token(struct lexer_state *ls)
 						put_char(ls, outc);
 						outc = 0;
 					}
-					if (c != '\n') /*XXX: stop dup newline*/
-                                        	put_char(ls, c);
+					//if (c != '\n' && !comment /*HOW*/?)
+					// TODO: stop dup newline .. 
+					put_char(ls, c);
 				}
 			}
-		} else if (outc == '/' && !(ls->flags & LEXER) && ls->condcomp) {
+		} else if (outc == '/' && !(ls->flags & LEXER)
+			&& ls->condcomp) {
 			/* this is a hack: we need to dump a pending slash */
 			put_char(ls, outc);
 			outc = 0;

@@ -58,12 +58,13 @@
 static char **include_path;
 static size_t include_path_nb = 0;
 
-int		no_special_macros = 0;
-int		emit_dependencies = 0, emit_defines = 0, emit_assertions = 0;
-FILE * 	        emit_output;
+int no_special_macros = 0;
+int emit_dependencies = 0, emit_defines = 0, emit_assertions = 0;
+FILE *emit_output;
 
-char * 	        current_filename = 0, *current_long_filename = 0;
-static int	current_incdir = -1;
+
+char *current_filename = 0, *current_long_filename = 0;
+static int current_incdir = -1;
 
 #ifndef NO_UCPP_ERROR_FUNCTIONS
 /*
@@ -1286,7 +1287,8 @@ include_last_chance:
 			t.line = l;
 			if (S_TOKEN(alt_ls.ctok->type)) {
 				t.name = sdup(alt_ls.ctok->name);
-				throw_away(alt_ls.gf, t.name);			}
+				throw_away(alt_ls.gf, t.name);
+			}
 			aol(tf.t, tf.nt, t, TOKEN_LIST_MEMG);
 		}
 	}

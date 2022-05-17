@@ -272,8 +272,7 @@ void print_token(struct lexer_state *ls, struct token *t, long uz_line)
 		return;
 	}
 	if (ls->flags & KEEP_OUTPUT) {
-		for (; ls->oline < ls->line;)
-                	put_char(ls, '\n');
+		for (; ls->oline < ls->line;) put_char(ls, '\n');
 	}
 	if (!S_TOKEN(t->type)) x = operators_name[t->type];
 	for (; *x; x ++) put_char(ls, *x);
