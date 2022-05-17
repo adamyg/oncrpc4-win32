@@ -31,6 +31,7 @@
 
 #include "SimpleConfig.h"
 
+
 namespace {
         // left trim
         inline std::string &

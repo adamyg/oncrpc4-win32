@@ -43,7 +43,7 @@ public:
         struct Options {
                 Options() : service_main(NULL), service_shutdown(NULL),
                         argc(0), argv(NULL), arg0(NULL),
-                        ignore(false), 
+                        ignore(false),
                         daemon_mode(false),
                         delay_start(false),
                         console_output(false),

@@ -31,8 +31,10 @@
 #include "ServiceDiags.h"
 #include "Logger.h"
 
-#define  WIN32_MEAN_AND_LEAN
+#ifndef  WINDOWS_MEAN_AND_LEAN
+#define  WINDOWS_MEAN_AND_LEAN
 #include <Windows.h>
+#endif
 
 static const char *loglevels[] = {
         "",

@@ -51,10 +51,10 @@
 #define PIPESIZE        (8 * 1024)
 
 struct Service::PipeEndpoint {
-        enum pipe_state { EP_CREATED, EP_CONNECT, EP_CONNECT_ERROR, EP_READY, EP_READING };
+        enum pipe_state { EP_CREATED, EP_CONNECT, EP_CONNECT_ERROR, EP_READY, EP_READING, EP_EOF };
 
         PipeEndpoint(HANDLE _ioevent, HANDLE _handle, DWORD _size) :
-                pending(FALSE),
+                iopending(FALSE),
                 ioevent(_ioevent), handle(_handle),
                 size(_size), state(EP_CREATED),
                 log_level_(ServiceDiags::Adapter::LLTRACE),
@@ -120,18 +120,19 @@ struct Service::PipeEndpoint {
 
         bool CompletionSetup()
         {
-                DWORD lasterr;
+                assert(FALSE == iopending);
 
-                assert(FALSE == pending);
-
-                if (PipeEndpoint::EP_CREATED == state || PipeEndpoint::EP_CONNECT_ERROR == state) {
+                switch (state) {
+                case PipeEndpoint::EP_CREATED:
+                case PipeEndpoint::EP_CONNECT_ERROR:
                         overlapped.hEvent = ioevent;
                         if (! ::ConnectNamedPipe(handle, &overlapped)) {
-                                if ((lasterr = GetLastError()) == ERROR_PIPE_CONNECTED) {
+                                const DWORD err = GetLastError();
+                                if (ERROR_PIPE_CONNECTED == err) {
                                         state = PipeEndpoint::EP_READY;
-                                } else if (ERROR_IO_PENDING == lasterr) {
+                                } else if (ERROR_IO_PENDING == err) {
                                         state = PipeEndpoint::EP_CONNECT;
-                                        pending = TRUE;
+                                        iopending = TRUE;
                                 } else {
                                         state = PipeEndpoint::EP_CONNECT_ERROR;
                                         assert(false);
@@ -140,14 +141,15 @@ struct Service::PipeEndpoint {
                                 state = PipeEndpoint::EP_CONNECT_ERROR;
                                 assert(false);
                         }
+                        break;
 
-                } else if (PipeEndpoint::EP_READY == state) {
+                case PipeEndpoint::EP_READY:
                         assert(overlapped.hEvent == ioevent);
                         if (! ::ReadFile(handle, cursor, avail, &result, &overlapped)) {
                                 const DWORD err = GetLastError();
                                 if (ERROR_IO_PENDING == err) { // pending
                                         state = PipeEndpoint::EP_READING;
-                                        pending = TRUE;
+                                        iopending = TRUE;
                                 } else if (ERROR_MORE_DATA == err) { // partial message
                                         state = PipeEndpoint::EP_READING;
                                         ::SetEvent(ioevent);
@@ -161,25 +163,45 @@ struct Service::PipeEndpoint {
                                 state = PipeEndpoint::EP_READING;
                                 ::SetEvent(ioevent);
                         }
+                        break;
 
-                } else {
+                case PipeEndpoint::EP_EOF:
+                        return false;
+
+                default:
                         assert(false);
+                        break;
                 }
                 return true;
         }
 
-        bool CompletionResults()
+        int CompletionResults()
         {
-                if (! pending || ::GetOverlappedResult(handle, &overlapped, &result, FALSE)) {
-                        pending = FALSE;
-                        return true;
+                if (! iopending ||
+                            ::GetOverlappedResult(handle, &overlapped, &result, FALSE)) {
+                        iopending = FALSE;
+                        return 0;
                 }
-                return false;
+
+                const DWORD err = GetLastError();
+                if (ERROR_IO_INCOMPLETE == err) {
+                        return -1;
+                } else if (ERROR_BROKEN_PIPE == err || ERROR_HANDLE_EOF == err ||
+                                ERROR_OPERATION_ABORTED == err) {
+                        if (PipeEndpoint::EP_CONNECT == state) {
+                                state = PipeEndpoint::EP_CONNECT_ERROR;
+                        } else {
+                                state = PipeEndpoint::EP_EOF;
+                        }
+                        iopending = FALSE;
+                        return -1;
+                }
+                return (int)err; // error
         }
 
 private:
         OVERLAPPED      overlapped;
-        BOOL            pending;
+        BOOL            iopending;
         DWORD           result;
 
 public:
@@ -396,7 +418,7 @@ Service::Initialise()
                 logger_thread_ = ::CreateThread(NULL, 0, logger_thread, (void *)arguments, 0, NULL);
 
                 if (NULL == logger_stop_event_ || NULL == logger_thread_ ||
-                                0 == ::WaitNamedPipeA(pipe_name_, 30 * 1000)) {
+                            0 == ::WaitNamedPipeA(pipe_name_, 30 * 1000)) {
                         diags().ferror("unable to create logger thread: %M");
                         if (logger_stop_event_) {
                                 ::CloseHandle(logger_stop_event_);
@@ -406,14 +428,14 @@ Service::Initialise()
                 ::Sleep(200);
 
                 if (NULL == (stderr_stream = freopen(pipe_name_, "wb", stderr)) ||
-                        -1 == setvbuf(stderr, NULL, _IOFBF, 1024)) {
+                            -1 == setvbuf(stderr, NULL, _IOFBF, 1024)) {
                         diags().ferror("unable to open redirect stderr <%s>: %m", pipe_name_);
                         return -1;
                 }
 
                 if (::WaitNamedPipeA(pipe_name_, 30 * 1000)) {
                         if (NULL == (stdout_stream = freopen(pipe_name_, "wb", stdout)) ||
-                                -1 == setvbuf(stdout, NULL, _IOFBF, 1024)) {
+                                    -1 == setvbuf(stdout, NULL, _IOFBF, 1024)) {
                                 diags().ferror("unable to open redirect stdout <%s>: %m", pipe_name_);
                                 return -1;
                         }
@@ -623,7 +645,8 @@ Service::logger_body(PipeEndpoint *endpoint)
                         endpoint = endpoints[idx];
                         assert(handles[idx + 1] == endpoint->ioevent);
 
-                        if (endpoint->CompletionResults()) {
+                        const int res = endpoint->CompletionResults();
+                        if (0 == res) {
                                 switch (endpoint->state) {
                                 case PipeEndpoint::EP_CONNECT:
 
@@ -690,9 +713,8 @@ Service::logger_body(PipeEndpoint *endpoint)
                                         break;
                                 }
 
-                        } else {
-                                DWORD dwError = GetLastError();
-                                diags().ferror("unexpected io completion : %u", (unsigned)dwError);
+                        } else if (res > 0) {
+                                diags().ferror("unexpected io completion : %d", res);
                                 assert(false);
                         }
 
