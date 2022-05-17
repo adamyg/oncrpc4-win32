@@ -153,7 +153,9 @@ struct Service::PipeEndpoint {
                                 } else if (ERROR_MORE_DATA == err) { // partial message
                                         state = PipeEndpoint::EP_READING;
                                         ::SetEvent(ioevent);
-                                } else if (ERROR_HANDLE_EOF == err || ERROR_BROKEN_PIPE == err) {
+                                } else if (ERROR_BROKEN_PIPE == err || ERROR_HANDLE_EOF == err ||
+                                                ERROR_OPERATION_ABORTED == err) {
+                                        state = PipeEndpoint::EP_EOF;
                                         return false;
                                 } else {
                                         assert(false);
@@ -615,7 +617,7 @@ Service::logger_body(PipeEndpoint *endpoint)
                 handles[0] = logger_stop_event_;
 
                 if (pollidx >= connections.size())
-                        pollidx = 0;            // reseed
+                        pollidx = 0; // reseed
 
                 for (unsigned c = pollidx; c < connections.size() && cnt < ENDPOINT_MAX; ++c) {
                         endpoints[cnt] = connections[c];
