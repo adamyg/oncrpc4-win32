@@ -101,10 +101,10 @@ windows_thread(void *arg)
     assert(THREAD_MAGIC == instance->magic);
     TlsSetValue(thread_tls_, instance);
     instance->ret = instance->routine(instance->arg);
+    _pthread_tls_cleanup(instance);
     if (0 == instance->handle) {                    /* detached? */
         if (0 == satomic_read(&instance->joining)) { /* join in process? */
             TlsSetValue(thread_tls_, (void *)-1);
-            _pthread_tls_cleanup(instance);
             instance_free(instance);
         }
     }
@@ -185,6 +185,7 @@ pthread_exit(void *value_ptr)
             TlsSetValue(thread_tls_, (void *)-1);
             instance_free(instance);
         }
+        _pthread_tls_cleanup(instance);
     }
     _endthreadex(0);                            /* does not explicity close the handle */
 }

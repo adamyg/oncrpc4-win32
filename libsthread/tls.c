@@ -43,27 +43,14 @@ typedef struct tlsatom {
 static tlskeys_t tlskeys = {0};
 static satomic_lock_t tlslock;
 
-struct tlsvalue {
-    unsigned magic;
-    void *data;
-};
-
-
 int
 pthread_key_create(pthread_key_t *key, void (*destructor)(void *))
 {
     int tls_idx = -1;
     DWORD t_key;
 
-    if (! key) return EINVAL;
-
-    struct tlsvalue *value;
-    if (NULL == (value = calloc(1, sizeof(struct tlsvalue)))) {
-        return ENOMEM;
-    }   
-
-    value->magic = TLS_MAGIC;
-    value->data = NULL;
+    if (! key) 
+            return EINVAL;
 
     satomic_lock(&tlslock);
     for (int idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
@@ -76,18 +63,16 @@ pthread_key_create(pthread_key_t *key, void (*destructor)(void *))
     }
     satomic_unlock(&tlslock);
 
+    if (tls_idx < 0)
+        return ENOMEM;
+
     if ((t_key = TlsAlloc()) == TLS_OUT_OF_INDEXES ||
-            ! TlsSetValue(t_key, (LPVOID)value)) {
-        if (tls_idx >= 0) {
-            tlskeys[tls_idx].active = 0;
-        }
-        free(value);
+            !TlsSetValue(t_key, (LPVOID)NULL)) {
+        tlskeys[tls_idx].active = 0;
         return EAGAIN;
     }
 
-    if (tls_idx >= 0) {
-        tlskeys[tls_idx].key = t_key;
-    }
+    tlskeys[tls_idx].key = t_key;
     *key = t_key;
 
     return 0;
@@ -113,17 +98,13 @@ _pthread_tls_cleanup(pthread_instance_t *instance)
             destructor_t destructor = NULL;
 
             if (t_tlskeys[idx].active) {
-                if (NULL == (destructor = t_tlskeys[idx].destructor)) {
-                    struct tlsvalue *value;
+                if (NULL != (destructor = t_tlskeys[idx].destructor)) {
                     void *data;
 
-                    if (NULL != (value = TlsGetValue(t_tlskeys[idx].key))) {
-                        assert(TLS_MAGIC == value->magic);
-                        if (NULL != (data = value->data)) {
-                            value->data = NULL;
-                            destructor(data);
-                            ++count;
-                        }
+                    if (NULL != (data = TlsGetValue(t_tlskeys[idx].key))) {
+                        TlsSetValue(t_tlskeys[idx].key, NULL);
+                        destructor(data);
+                        ++count;
                     }
                 }
             }
@@ -132,45 +113,30 @@ _pthread_tls_cleanup(pthread_instance_t *instance)
         if (0 == count)
             break;
     }
-
-    /* release local containers */
-    for (idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
-        if (t_tlskeys[idx].active) {
-            struct tlsvalue *value;
-
-            if (NULL != (value = TlsGetValue(t_tlskeys[idx].key))) {
-                assert(TLS_MAGIC == value->magic);
-                free(value);
-            }
-        }
-    }
 }
 
 
 int
 pthread_key_delete(pthread_key_t key)
 {
-    struct tlsvalue *value;
-    if (NULL != (value = TlsGetValue(key))) {
-        assert(TLS_MAGIC == value->magic);
+    unsigned found = 0;
 
-        satomic_lock(&tlslock);
-        for (unsigned idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
-            if (tlskeys[idx].active) {
-                if (key == tlskeys[idx].key) {
-                    tlskeys[key].key = 0;
-                    tlskeys[key].destructor = NULL;
-                    tlskeys[key].active = 0;
-                    break;
-                }
+    satomic_lock(&tlslock);
+    for (unsigned idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
+        if (tlskeys[idx].active) {
+            if (key == tlskeys[idx].key) {
+                tlskeys[idx].key = 0;
+                tlskeys[idx].destructor = NULL;
+                tlskeys[idx].active = 0;
+                found = 1;
+                break;
             }
         }
-        satomic_unlock(&tlslock);
+    }
+    satomic_unlock(&tlslock);
 
-        if (TlsFree(key)) {
-            free(value);
-            return 0;
-        }
+    if (found && TlsFree(key)) {
+        return 0;
     }
     return EINVAL;
 }
@@ -179,10 +145,7 @@ pthread_key_delete(pthread_key_t key)
 int
 pthread_setspecific(pthread_key_t key, const void *pointer)
 {
-    struct tlsvalue *value;
-    if (NULL != (value = TlsGetValue(key))) {
-        assert(TLS_MAGIC == value->magic);
-        value->data = (void *)pointer;
+    if (TlsSetValue(key, (void *)pointer)) {
         return 0;
     }
     return EINVAL;
@@ -192,10 +155,9 @@ pthread_setspecific(pthread_key_t key, const void *pointer)
 void *
 pthread_getspecific(pthread_key_t key)
 {
-    struct tlsvalue *value;
-    if (NULL != (value = TlsGetValue(key))) {
-        assert(TLS_MAGIC == value->magic);
-        return value->data;
+    void *value = TlsGetValue(key);
+    if (GetLastError() == ERROR_SUCCESS) {
+        return value;
     }
     return NULL;
 }
