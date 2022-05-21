@@ -78,7 +78,7 @@ extern int strcasecmp(const char *s1, const char *s2);
 #endif
 #endif /*HAVE_STRCASECMP*/
 
-#if !defined(HAVE_STRNCASECMP) && !defined(__WATCOMC__)
+#if !defined(HAVE_STRNCASECMP)
 extern int strncasecmp(const char *s1, const char *s2, size_t len);
 #if !defined(LIBCOMPAT_SOURCE)
 #define HAVE_STRNCASECMP

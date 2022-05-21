@@ -4,4 +4,6 @@ rpcbind_usage.h
 Makefile
 *.err
 *.aps
+*.mbr
+
 
