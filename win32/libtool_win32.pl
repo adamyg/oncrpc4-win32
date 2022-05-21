@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 # -*- mode: perl; -*-
-# $Id: libtool_win32.pl,v 1.1 2022/05/15 07:04:12 cvsuser Exp $
+# $Id: libtool_win32.pl,v 1.2 2022/05/20 12:26:40 cvsuser Exp $
 # libtool emulation for WIN32 builds.
 #
 #   **Warning**
@@ -895,7 +895,12 @@ print "*** non-libtool objects @BAD_OBJECTS is not portable!\n";
         print CMD "export   ".WatcomExportDef($_, $wc_fastcall)."\n";
       }
       foreach(@LIBPATHS) {
-        print CMD "libpath  ".unix2dos($_)."\n";
+        my $u2d = unix2dos($_);
+        if ($u2d =~ / /) {
+            print CMD "libpath  '${u2d}'\n";
+        } else {
+            print CMD "libpath  ${u2d}\n";
+        }
       }
       foreach(@LIBRARIES) {
         print CMD "library  ".unix2dos(true_library($_))."\n";

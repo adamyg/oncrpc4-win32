@@ -31,11 +31,13 @@
  */
 
 #include <sys/param.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <poll.h>
 
 #include "rpc_win32.h"
 
+#pragma comment(lib, "Kernel32.lib")
 #pragma comment(lib, "Ws2_32.lib")
 
 #if defined(_DEBUG)
@@ -61,6 +63,20 @@ static int pipe_getsockopt(struct Pipe *pipe, int level, int optname, void *optv
 static int pipe_setsockopt(struct Pipe *pipe, int level, int optname, const void *optval, socklen_t optlen);
 static int pipe_close(int pipefd, struct Pipe *pipe);
 
+/////////////////////////////////////////////////////////////////////////////////////////
+//  misc
+
+#if defined(__WATCOMC__)
+int
+_getmaxstdio(void)
+{
+	//XXX: default is _NFILES/20.
+	int nfiles = _grow_handles(512);
+	assert(512 == nfiles);
+	return nfiles;
+}
+#endif  //__WATCOMC__
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //  errno adapters
@@ -82,16 +98,10 @@ wsaerrno_map(int nerrno)
 	case WSAENOBUFS:		nerrno = ENOMEM; break;
 	case WSAENETDOWN:		nerrno = ENOSYS; break;
 	case WSANOTINITIALISED: 	nerrno = ENOSYS; break;
-	case WSAEWOULDBLOCK:		nerrno = EAGAIN; break;
-#ifndef _CRT_NO_POSIX_ERROR_CODES
-	case WSAEADDRNOTAVAIL:		nerrno = EADDRNOTAVAIL; break;
-	case WSAENOTCONN:		nerrno = ENOTCONN; break;
-	case WSAECONNREFUSED:		nerrno = ECONNREFUSED; break;
-#else
-	case WSAEADDRNOTAVAIL:		break;	//10049
-	case WSAENOTCONN:		break;	//10057
-	case WSAECONNREFUSED:		break;	//10061
-#endif
+	case WSAEWOULDBLOCK:		nerrno = EWOULDBLOCK; break;
+	case WSAEADDRNOTAVAIL:		break; //10049
+	case WSAENOTCONN:		break; //10057
+	case WSAECONNREFUSED:		break; //10061
 	default:
 		assert(0);
 		break;

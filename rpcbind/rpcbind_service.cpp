@@ -35,10 +35,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "../libService/Service.h"              // Service implementation.
 #include "../libNTService/NTServiceConfig.h"    // CNTServiceConfig
 #include "../libNTService/NTServiceControl.h"   // CNTServiceControl
 
-#include "../libService/Service.h"              // Service implementation.
 #include "rpcbind_service.h"
 
 #include <iostream>

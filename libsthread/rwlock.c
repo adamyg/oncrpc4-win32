@@ -26,6 +26,7 @@
 
 #include "sthread.h"
 
+#include <errno.h>
 #include <assert.h>
 
 

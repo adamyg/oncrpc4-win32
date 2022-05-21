@@ -406,10 +406,16 @@ send_again:
 	reply_msg.acpted_rply.ar_results.where = resultsp;
 	reply_msg.acpted_rply.ar_results.proc = xresults;
 
+#if defined(__WATCOMC__)
+#undef timercmp
+#define timercmp(tvp, uvp, cmp) \
+        ((tvp)->tv_sec cmp (uvp)->tv_sec || \
+         (tvp)->tv_sec == (uvp)->tv_sec && (tvp)->tv_usec cmp (uvp)->tv_usec)
+#endif
 
 	for (;;) {
 		/* Decide how long to wait. */
-		if (timercmp(&next_sendtime, &timeout, <))
+		if (timercmp(&next_sendtime, &timeout, < ))
 			timersub(&next_sendtime, &time_waited, &tv);
 		else
 			timersub(&timeout, &time_waited, &tv);
@@ -426,7 +432,7 @@ send_again:
 			} while (recvlen < 0 && errno == EINTR);
 			
 #if defined(_WIN32)
-			if (recvlen < 0 && errno != WSAEWOULDBLOCK) {
+			if (recvlen < 0 && errno != WSAEWOULDBLOCK && errno != EWOULDBLOCK) {
 #else
 			if (recvlen < 0 && errno != EWOULDBLOCK) {
 #endif

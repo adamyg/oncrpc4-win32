@@ -1,6 +1,6 @@
 #pragma once
-#ifndef CONFIG_H_INCLUDED
-#define CONFIG_H_INCLUDED
+#ifndef SIMPLECONFIG_H_INCLUDED
+#define SIMPLECONFIG_H_INCLUDED
 /* -*- mode: c; indent-width: 8; -*- */
 /*
  *  Simple config
@@ -29,9 +29,12 @@
  */
 
 #include <string>
+#include <string.h>
 #include <map>
 #include <vector>
+
 #include <cctype>
+#include <utility>
 
 #include "w32support.h"
 
@@ -59,7 +62,7 @@ public:
                         if (ch >= 'A' && ch <= 'Z') // tolower
                                 return ch - ('A' - 'a');
                         if (ch == '/')
-                                return '\\';        // equiv
+                                return '\\';    // equiv
                         return ch;
                 }
 
@@ -85,7 +88,7 @@ public:
                                                 return (l - r);
                                         }
                                 }
-                                if (lc == 0)        //eos
+                                if (lc == 0)    // eos
                                         return 0;
                         }
                         /*NOTREACHED*/
@@ -116,7 +119,7 @@ public:
                                                 return (l - r) < 0;
                                         }
                                 }
-                                if (lc == 0)        //eos
+                                if (lc == 0)    // eos
                                         return 0;
                         }
                 }
@@ -134,14 +137,30 @@ public:
                                                 return (l - r) < 0;
                                         }
                                 }
-                                if (lc == 0)        //eos
+                                if (lc == 0)    // eos
                                         return 0;
                         }
                 }
         };
 
+#if defined(__WATCOMC__)
+        typedef std::map<std::string, std::string, iless> collection_impl;
+        struct collection_t : public collection_impl {
+                const_iterator find(const std::string &value) const {
+                        return ((collection_impl *)this)->find(value);
+                }
+                const_iterator find(const SimpleConfig::string_view &value) const {
+                        const std::string t_value(value.data, value.length);
+                        return ((collection_impl *)this)->find(t_value);
+                }
+                const_iterator find(const char *value) const {
+                        return ((collection_impl *)this)->find(value);
+                }
+        };
+#else
         typedef std::map<std::string, std::string, iless> collection_t;
-        typedef std::vector<std::pair <std::string, std::string>> elements_t;
+#endif
+        typedef std::vector<std::pair <std::string, std::string>/**/> elements_t;
 
 private:
         struct values_t {
@@ -155,7 +174,23 @@ private:
                 }
         };
 
+#if defined(__WATCOMC__)
+        typedef std::map<std::string, values_t *, iless> sections_impl;
+        struct sections_t : public sections_impl {
+                const_iterator find(const std::string &value) const {
+                        return ((sections_impl *)this)->find(value);
+                }
+                const_iterator find(const SimpleConfig::string_view &value) const {
+                        const std::string t_value(value.data, value.length);
+                        return ((sections_impl *)this)->find(t_value);
+                }
+                const_iterator find(const char *value) const {
+                        return ((sections_impl *)this)->find(value);
+                }
+        };
+#else
         typedef std::map<std::string, values_t *, iless> sections_t;
+#endif
 
 public:
         SimpleConfig();
@@ -192,4 +227,5 @@ private:
         sections_t sections_;
 };
 
-#endif  //CONFIG_H_INCLUDED
+#endif  //SIMPLECONFIG_H_INCLUDED
+

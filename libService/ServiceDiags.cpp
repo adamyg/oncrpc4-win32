@@ -25,8 +25,10 @@
  *  ==end==
  */
 
-#include <cstring>
-#include <cassert>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <assert.h>
 
 #include "ServiceDiags.h"
 #include "Logger.h"
@@ -42,8 +44,8 @@ static const char *loglevels[] = {
         "WARNING| ",
         "INFO   | ",
         "DEBUG  | ",
-        "TRACE  | ",    //stdout
-        "STDERR | "     //stderr
+        "TRACE  | ",    // stdout
+        "STDERR | "     // stderr
         };
 
 static const char *month[] = {
@@ -79,21 +81,17 @@ ServiceDiags::Adapter::setlogms(bool value)
 }
 
 
-void
-ServiceDiags::Adapter::print(Logger &logger, enum loglevel type, const char *fmt, va_list *ap)
+static const char *
+parse_strerror(char *fmt_copy, unsigned fmt_size, const char *fmt)
 {
 #define	MESSAGE_LEN     (2 * 1024)
 #define	FMT_LEN	        1024
 
         const int saved_errno = errno;
-        char message[MESSAGE_LEN], fmt_copy[FMT_LEN];
-        int mlen;
-
-        // Parse format, %[mM] expansion
 
         for (const char *p = std::strchr(fmt, '%'); p;) {
                 if (p[1] == 'm' || p[1] == 'M') {
-                        int left = sizeof(fmt_copy) - 1 /*nul*/;
+                        int left = fmt_size - 1 /*nul*/;
                         char *f, ch;
 
                         for (f = fmt_copy; 0 != (ch = *fmt++) && left;) {
@@ -127,28 +125,58 @@ ServiceDiags::Adapter::print(Logger &logger, enum loglevel type, const char *fmt
                 }
                 p = std::strchr((char *)(p + 1), '%');
         }
+        return fmt;
+}
+
+
+void
+ServiceDiags::Adapter::printv(Logger &logger, enum loglevel type, const char *fmt, VA_LIST_ARG ap)
+{
+        char message[MESSAGE_LEN], fmt_copy[FMT_LEN];
+        int mlen;
+
+        // Parse format, %[mM] expansion
+
+        fmt = parse_strerror(fmt_copy, sizeof(fmt_copy), fmt);
 
         // Message
 
-        if (ap) {
-                if ('%' == fmt[0] && 's' == fmt[1] && 0 == fmt[2]) {
-                        // log( "%s", buffer )
-                        const char *buffer = va_arg(*ap, const char *);
-                        mlen = strlen(buffer ? buffer : "");
-                } else {
-                        // log( ... )
-                        mlen = vsprintf_s(message, sizeof(message), fmt, *ap);
-                }
-                fmt  = message;
-        } else {
-                // log ( message )
+        if ('%' == fmt[0] && 's' == fmt[1] && 0 == fmt[2]) {
+                // log( "%s", buffer )
+                const char *buffer = va_arg(*ap, const char *);
+                fmt = buffer ? buffer : "";
                 mlen = strlen(fmt);
+        } else {
+                // log( ... )
+                mlen = vsprintf_s(message, sizeof(message), fmt, ap);
+                fmt = message;
         }
 
         // Push
 
         if (mlen > 0) {
-                assert(mlen <= sizeof(message) || (fmt != message));
+                push(logger, type, (const char *)fmt, (size_t)mlen);
+        }
+}
+
+
+void
+ServiceDiags::Adapter::print(Logger &logger, enum loglevel type, const char *fmt)
+{
+        char fmt_copy[FMT_LEN];
+        int mlen;
+
+        // Parse format, %[mM] expansion
+
+        fmt = parse_strerror(fmt_copy, sizeof(fmt_copy), fmt);
+
+        // Message
+
+        mlen = strlen(fmt);
+
+        // Push
+
+        if (mlen > 0) {
                 push(logger, type, (const char *)fmt, (size_t)mlen);
         }
 }

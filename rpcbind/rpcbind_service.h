@@ -28,8 +28,13 @@
 
 __BEGIN_DECLS
 
+#if defined(__WATCOMC__)
+int __cdecl rpcservice_main(int argc, char * const *argv);
+void __cdecl rpcservice_shutdown(int);
+#else
 int rpcservice_main(int argc, char * const *argv);
 void rpcservice_shutdown(int);
+#endif
 
 __END_DECLS
 

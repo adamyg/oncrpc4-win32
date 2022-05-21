@@ -1,5 +1,5 @@
 # -*- mode: mak; indent-tabs-mode: t; tab-width: 8 -*-
-# $Id: Makefile.in,v 1.1 2022/05/15 07:04:11 cvsuser Exp $
+# $Id: Makefile.in,v 1.2 2022/05/20 11:29:28 cvsuser Exp $
 # rpcgen Makefile
 #
 # Copyright (c) 2022, Adam Young.
@@ -87,7 +87,7 @@ LDDEBUG=	@LDDEBUG@
 LDRELEASE=	@LDRELEASE@
 
 CINCLUDE=	-I. -I$(D_INC) @CINCLUDE@
-CEXTRA=		@DEFS@ -wd4996
+CEXTRA=		@DEFS@
 
 ifeq ("$(BUILD_TYPE)","release")
 CFLAGS+=	$(CRELEASE) $(CWARN) $(CINCLUDE) $(CEXTRA) $(XFLAGS)

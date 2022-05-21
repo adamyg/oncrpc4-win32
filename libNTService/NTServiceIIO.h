@@ -26,6 +26,8 @@
  * See the Licence for details.
  * ==end==
  */
+ 
+#include <stdarg.h>
 
 namespace NTService {
 

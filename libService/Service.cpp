@@ -252,7 +252,6 @@ Service::Service(const char *appname, const char *svcname, bool console_mode) :
             options_(),
             config_(),
             configopen_(false),
-            appname_(),
             logger_stop_event_(0),
             logger_thread_(0),
             server_stopped_event_(0),
@@ -404,7 +403,7 @@ Service::Initialise()
         }
 
         if (options_.logger) {
-                PipeEndpoint *endpoint = nullptr;
+                PipeEndpoint *endpoint = NULL;
 
                 if (unsigned ret = NewPipeEndpoint(pipe_name_, endpoint)) {
                         diags().ferror("unable to open redirect pipe <%s>: %u", pipe_name_, ret);
@@ -601,13 +600,13 @@ Service::logger_body(PipeEndpoint *endpoint)
 
                 if (endpoint) {
                         if (! endpoint->CompletionSetup()) {
-                                auto it = std::find(connections.begin(), connections.end(), endpoint);
+                                std::vector<PipeEndpoint *>::iterator it = std::find(connections.begin(), connections.end(), endpoint);
                                 if (it != connections.end()) {
                                         connections.erase(it);
                                         delete endpoint;
                                 }
                         }
-                        endpoint = nullptr;
+                        endpoint = NULL;
                 }
 
                 // build handles [round robin/limit handles]

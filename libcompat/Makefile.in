@@ -128,6 +128,7 @@ LIBCSOURCES=\
 		strtok_r.c		\
 		strtonum.c		\
 		syslog.c		\
+		timegm.c		\
 		vasprintf.c
 
 CFLAGS+=	-DLIBCOMPAT_SOURCE=1
@@ -159,13 +160,13 @@ $(LIBRARY):		$(LIBOBJS)
 
 $(D_BIN)/dirname$(E):	MAPFILE=$(basename $@).map
 $(D_BIN)/dirname$(E):	LINKLIBS=lcompat
-$(D_BIN)/dirname$(E):	$(D_OBJ)/.created $(D_OBJ)/dirname_main$(O)
-		$(CC) $(LDFLAGS) -o $@ $(D_OBJ)/dirname_main$(O) $(LDLIBS) @LDMAPFILE@
+$(D_BIN)/dirname$(E):	$(D_OBJ)/dirname_main$(O)
+		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS) @LDMAPFILE@
 
 $(D_BIN)/basename$(E):	MAPFILE=$(basename $@).map
 $(D_BIN)/basename$(E):	LINKLIBS=lcompat
-$(D_BIN)/basename$(E):	$(D_OBJ)/.created $(D_OBJ)/basename_main$(O)
-		$(CC) $(LDFLAGS) -o $@ $(D_OBJ)/basename_main$(O) $(LDLIBS) @LDMAPFILE@
+$(D_BIN)/basename$(E):	$(D_OBJ)/basename_main$(O)
+		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS) @LDMAPFILE@
 
 .PHONY:		installinc
 installinc:		../include/.created

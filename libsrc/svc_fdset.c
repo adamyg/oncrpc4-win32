@@ -166,7 +166,8 @@ svc_fdset_free(void *v)
 static void
 svc_pollfd_init(struct pollfd *pfd, int nfd)
 {
-	for (int i = 0; i < nfd; i++) {
+	int i;
+	for (i = 0; i < nfd; i++) {
 		pfd[i].fd = -1;
 		pfd[i].events = POLLIN | POLLPRI | POLLRDNORM | POLLRDBAND;
 		pfd[i].revents = 0;
@@ -192,11 +193,12 @@ static struct svc_fdset *
 svc_pollfd_add(int fd, struct svc_fdset *fds)
 {
 	struct pollfd *pfd;
+	int i;
 
 	if ((pfd = svc_pollfd_alloc(fds)) == NULL)
 		return NULL;
 
-	for (int i = 0; i < fds->fdnum; i++)
+	for (i = 0; i < fds->fdnum; i++)
 		if (pfd[i].fd == -1) {
 			if (i >= fds->fdused)
 				fds->fdused = i + 1;
@@ -223,11 +225,12 @@ static struct svc_fdset *
 svc_pollfd_del(int fd, struct svc_fdset *fds)
 {
 	struct pollfd *pfd;
+	int i = 0;
 
 	if ((pfd = svc_pollfd_alloc(fds)) == NULL)
 		return NULL;
 
-	for (int i = 0; i < fds->fdnum; i++) {
+	for (i = 0; i < fds->fdnum; i++) {
 		if (pfd[i].fd != fd)
 			continue;
 
@@ -356,6 +359,7 @@ LIBRPC_API int
 svc_fdset_set(int fd)
 {
 	struct svc_fdset *fds = svc_fdset_alloc(fd);
+	int rv;
 
 	if (fds == NULL)
 		return -1;
@@ -369,7 +373,7 @@ svc_fdset_set(int fd)
 	if (fd > fds->fdmax)
 		fds->fdmax = fd;
 
-	int rv = svc_pollfd_add(fd, fds) ? 0 : -1;
+	rv = svc_pollfd_add(fd, fds) ? 0 : -1;
 	DPRINTF_FDSET(fds, "%d", fd);
 
 	svc_fdset_sanitize(fds);
@@ -393,13 +397,14 @@ LIBRPC_API int
 svc_fdset_clr(int fd)
 {
 	struct svc_fdset *fds = svc_fdset_alloc(fd);
+	int rv;
 
 	if (fds == NULL)
 		return -1;
 
 	FD_CLR(fd, fds->fdset);
 
-	int rv = svc_pollfd_del(fd, fds) ? 0 : -1;
+	rv = svc_pollfd_del(fd, fds) ? 0 : -1;
 	DPRINTF_FDSET(fds, "%d", fd);
 
 	svc_fdset_sanitize(fds);
@@ -410,16 +415,18 @@ LIBRPC_API fd_set *
 svc_fdset_copy(const fd_set *orig)
 {
 	int size = svc_fdset_getsize(0);
+	fd_set *copy = NULL;
 	if (size == -1)
 		return NULL;
+
 #if defined(_WIN32)
-	fd_set *copy = calloc(1, sizeof(fd_set));
+	copy = calloc(1, sizeof(fd_set));
 	if (copy == NULL)
 		return NULL;
 	if (orig)
 		memcpy(copy, orig, sizeof(fd_set));
 #else
-	fd_set *copy = calloc(1, __NFD_BYTES(size));
+	copy = calloc(1, __NFD_BYTES(size));
 	if (copy == NULL)
 		return NULL;
 	if (orig)
@@ -469,10 +476,12 @@ svc_fdset_getsize(int fd)
 LIBRPC_API struct pollfd *
 svc_pollfd_copy(const struct pollfd *orig)
 {
+	struct pollfd *copy = NULL;
 	int size = svc_fdset_getsize(0);
+
 	if (size == -1)
 		return NULL;
-	struct pollfd *copy = calloc(size, sizeof(*orig));
+	copy = calloc(size, sizeof(*orig));
 	if (copy == NULL)
 		return NULL;
 	if (orig)

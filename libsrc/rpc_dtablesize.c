@@ -56,8 +56,8 @@ _rpc_dtablesize(void)
 {
 	static int size;
 #if defined(_WIN32)
-	if (size == 0) /*max(8096) default max(512)*/
-		size = _getmaxstdio();
+	if (size == 0)
+		size = _getmaxstdio(); /*max(8096) default max(512)*/
 #else
 	if (size == 0)
 		size = (int)sysconf(_SC_OPEN_MAX);

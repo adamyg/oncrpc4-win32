@@ -543,7 +543,7 @@ read_vc(caddr_t xprtp, caddr_t buf, int len)
 	if (cfp->nonblock) {
 		len = (int)read(sock, buf, (size_t)len);
 		if (len < 0) {
-			if (errno == EAGAIN)
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				len = 0;
 			else
 				goto fatal_err;
@@ -604,7 +604,7 @@ write_vc(caddr_t xprtp, caddr_t buf, int len)
 
 	for (cnt = len; cnt > 0; cnt -= i, buf += i) {
 		if ((i = (int)write(xprt->xp_fd, buf, (size_t)cnt)) < 0) {
-			if (errno != EAGAIN || !cd->nonblock) {
+			if ((errno != EAGAIN && errno != EWOULDBLOCK) || !cd->nonblock) {
 				cd->strm_stat = XPRT_DIED;
 				return -1;
 			}
@@ -807,6 +807,13 @@ __svc_clean_idle(fd_set *fds __unused, int timeout, bool_t cleanblock)
 		cd = (struct cf_conn *)xprt->xp_p1;
 		if (!cleanblock && !cd->nonblock)
 			continue;
+
+#if defined(__WATCOMC__)
+#undef timercmp
+#define timercmp(tvp, uvp, cmp) \
+        ((tvp)->tv_sec cmp (uvp)->tv_sec || \
+         (tvp)->tv_sec == (uvp)->tv_sec && (tvp)->tv_usec cmp (uvp)->tv_usec)
+#endif
 
 		if (timeout == 0) {
 			timersub(&tv, &cd->last_recv_time, &tdiff);

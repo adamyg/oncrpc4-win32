@@ -29,7 +29,17 @@
  */
 
 #include "sthread.h"
+
+#if defined(__WATCOMC__)
+#include <process.h>
+#define  WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#if !defined(RTL_RUN_ONCE_INIT)
+#define RTL_RUN_ONCE_INIT       {0}
+#endif
+#else //_MSC_VER
 #include <processthreadsapi.h>
+#endif
 
 #include <sys/socket.h>
 #include <time.h>
@@ -46,11 +56,13 @@
 #define VALID_HANDLE(_h)        (_h && INVALID_HANDLE_VALUE != _h)
 #define CURRENT_THREAD          ((HANDLE)(-2))  /* current thread psuedo handle */
 
+static pthread_instance_t *instance_new(void);
+
 static pthread_once_t thread_once_ = RTL_RUN_ONCE_INIT; 
 static DWORD thread_tls_ = 0;
 
 static pthread_instance_t *
-instance_new()
+instance_new(void)
 {      
     pthread_instance_t *instance;
     if (NULL != (instance = (pthread_instance_t *)calloc(sizeof(pthread_instance_t), 1))) {
@@ -118,18 +130,19 @@ pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_rout
     if (thread && start_routine) {
         pthread_once(&thread_once_, thread_tls_once);
         if (TLS_OUT_OF_INDEXES != thread_tls_) {
-            pthread_instance_t *instance = instance_new(1);
+            pthread_instance_t *instance = instance_new();
 
             if (instance) {
                 instance->routine = start_routine;
                 instance->arg = arg;
 
                 {   unsigned id = 0, stacksize = 0;
+                    uintptr_t handle;
                     if (attr) {                     /* optional stacksize? */
                         assert(0xBABEFACE == attr->attributes[ATTRIBUTE_MAGIC]);
                         stacksize = (unsigned)attr->attributes[ATTRIBUTE_STACKSIZE];
                     }
-                    uintptr_t handle = _beginthreadex(NULL, stacksize, windows_thread, instance, 0, &instance->id);
+                    handle = _beginthreadex(NULL, stacksize, windows_thread, instance, 0, &instance->id);
                     if (handle != (uintptr_t)-1) {
                         instance->handle = (HANDLE) handle;
                         if (attr) {                 /* detached? */

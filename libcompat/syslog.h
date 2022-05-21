@@ -144,6 +144,7 @@ EXAMPLES
 */
 
 #include <sys/cdefs.h>
+#include <stdarg.h>
 
 #define LOG_EMERG       0       /* system is unusable */
 #define LOG_ALERT       1       /* action must be taken immediately */

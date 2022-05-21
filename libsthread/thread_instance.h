@@ -29,7 +29,7 @@ typedef struct pthread_instance {
     unsigned magic;
     HANDLE handle;
     satomic_lock_t joining;
-    DWORD id;
+    unsigned id;
     void *(*routine)(void *);
     void *arg;
     void *ret;

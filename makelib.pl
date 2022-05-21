@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.pl,v 1.1 2022/05/15 07:04:06 cvsuser Exp $
+# $Id: makelib.pl,v 1.2 2022/05/21 06:57:11 cvsuser Exp $
 # Makefile generation under WIN32 (MSVC/WATCOMC/MINGW) and DJGPP.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
@@ -993,6 +993,7 @@ my @x_functions     = (
         'strlcpy', 'strlcat',                   # bsd/linux
             'strsep', 'strnstr', 'strcasestr', 'strcasestr_l', 'strtonum',
         'strtof', 'strtold', 'strtoll',
+        'strtok_r',
         'strverscmp', '__strverscmp',
         'mkdtemp',                              # bsd/linux
         'getw', 'putw',
