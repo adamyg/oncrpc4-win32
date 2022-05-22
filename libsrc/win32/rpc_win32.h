@@ -29,14 +29,8 @@
 /*
  *  WinSock/Windows definitions
  */ 
- 
-#if !defined(_CRT_SECURE_NO_DEPRECATE)
-#define _CRT_SECURE_NO_DEPRECATE                /* disable deprecate warnings */
-#endif
 
-#if !defined(_WINSOCK_DEPRECATED_NO_WARNINGS)
-#define _WINSOCK_DEPRECATED_NO_WARNINGS         /* disable deprecate warnings */
-#endif
+#include "rpc_config.h"
 
 #if !defined(HAVE_WINSOCK2_H_INCLUDED)
 #define HAVE_WINSOCK2_H_INCLUDED

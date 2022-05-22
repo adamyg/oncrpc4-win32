@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 # -*- mode: perl; -*-
-# $Id: libtool_win32.pl,v 1.2 2022/05/20 12:26:40 cvsuser Exp $
+# $Id: libtool_win32.pl,v 1.3 2022/05/22 13:49:43 cvsuser Exp $
 # libtool emulation for WIN32 builds.
 #
 #   **Warning**
@@ -621,7 +621,7 @@ Link() {
                 # Debugger support:
                 #   -h[wcd]     Watcom,Codeview,Dwarf
                 #
-                } elsif (/^-h([wc])$/) {
+                } elsif (/^-h([wcd])$/) {
                     $wc_debugger = $1;
                 }
 
