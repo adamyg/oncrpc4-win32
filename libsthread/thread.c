@@ -30,13 +30,15 @@
 
 #include "sthread.h"
 
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || \
+        (defined(_MSC_VER) && (_MSC_VER <= 1800)) /*2013**/
 #include <process.h>
 #define  WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #if !defined(RTL_RUN_ONCE_INIT)
 #define RTL_RUN_ONCE_INIT       {0}
 #endif
+
 #else //_MSC_VER
 #include <processthreadsapi.h>
 #endif
