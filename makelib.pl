@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.pl,v 1.5 2022/05/22 14:05:28 cvsuser Exp $
+# $Id: makelib.pl,v 1.6 2022/05/23 12:18:58 cvsuser Exp $
 # Makefile generation under WIN32 (MSVC/WATCOMC/MINGW) and DJGPP.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
@@ -902,6 +902,17 @@ my @x_headers2      = (     #headers; check only
         'afunix.h'
         );
 
+my @x_predefines    = (
+        '_MSC_VER',
+        '__WATCOMC__',
+        '__GNUC__',
+        '__STDC__',
+        '__STDC_VERSION__',
+        'cpp,__cplusplus',
+        'cpp,__STDC_HOSTED__',
+        'cpp,__STDC_NO_ATOMICS__',
+        );
+
 my @x_decls         = (     #stdint/intypes.h
         'SIZE_MAX',
         'SSIZE_MAX',
@@ -924,7 +935,7 @@ my @x_decls         = (     #stdint/intypes.h
         'WCHAR_MAX',
         'INTMAX_MIN',
         'INTMAX_MAX',
-        'UINTMAX_MAX',
+        'UINTMAX_MAX'
         );
 
 my @x_types         = (     #stdint/inttypes/types.h
@@ -1069,6 +1080,7 @@ my $config          = undef;                    # Loaded configuration
 our @HEADERS        = ();
 our @EXTHEADERS     = ();
 our %DECLS          = ();
+our %DECLSVALUE     = ();
 our %TYPES          = ();
 our %SIZES          = ();
 our %FUNCTIONS      = ();
@@ -1109,13 +1121,13 @@ sub ExeRealpath($);
 sub LoadContrib($$$$$);
 sub CheckCompiler($$);
 sub CheckHeader($$);
-sub CheckDecl($$);
+sub CheckDecl($$$);
 sub CheckType($$);
 sub CheckSize($$);
 sub CheckFunction($$);
 sub CheckICUFunction($);
 sub CheckCommand($$;$);
-sub CheckExec($$;$);
+sub CheckExec($$;$$);
 sub ExpandENV($);
 sub System($);
 sub systemrcode($);
@@ -1231,6 +1243,7 @@ main()
         print CACHE Data::Dumper->Dump([\@EXTHEADERS], [qw(*XXEXTHEADERS)]);
         print CACHE Data::Dumper->Dump([\%CONFIG_H],   [qw(*CONFIG_H)]);
         print CACHE Data::Dumper->Dump([\%DECLS],      [qw(*DECLS)]);
+        print CACHE Data::Dumper->Dump([\%DECLSVALUE], [qw(*DECLSVALUE)]);
         print CACHE Data::Dumper->Dump([\%TYPES],      [qw(*TYPES)]);
         print CACHE Data::Dumper->Dump([\%SIZES],      [qw(*SIZES)]);
         print CACHE Data::Dumper->Dump([\%FUNCTIONS],  [qw(*FUNCTIONS)]);
@@ -1538,27 +1551,46 @@ Configure($$)           # (type, version)
         }
     }
 
-    # decls
-    foreach my $declspec (@x_decls) {
+    # predefines/decls
+    foreach my $declspec (@x_predefines, @x_decls) {
         my $name   = $declspec;
         my $define = uc($declspec);
+        my $cpp    = 0;
+
         $define =~ s/ /_/g;
         if ($declspec =~ /^(.+):(.+)$/) {
             $name   = $1;
             $define = $2;                       # optional explicit #define
         }
 
+        if ($name =~ /^cpp,(.+)$/) {            # cpp prefix
+            $define = uc($1);
+            $name = $1;
+            $cpp = 1;
+        }
+
         my $cached = (exists $DECLS{$name});
         my $status = ($cached ? $DECLS{$name} : -1);
+        my $value  = ($cached ? $DECLSVALUE{$name} : "");
 
         print "decl:     ${name} ...";
         print " " x (28 - length($name));
 
-        if (1 == $status ||
-                (-1 == $status && 0 == CheckDecl($type, $name))) {
+        if (-1 == $status) {
+            $value = CheckDecl($type, $name, $cpp);
+            $status = 1
+                if ($value ne "");
+        }
+
+        if (1 == $status) {
             $DECLS{$name} = 1;
             $CONFIG_H{"HAVE_DECL_${define}"} = 1;
-            print ($cached ? "[yes, cached]" : "[yes]");
+            if ($cached) {
+               print "${define}=${value} [yes, cached]";
+            } else {
+               $DECLSVALUE{$name} = $value;
+               print "[yes]";
+            }
         } else {
             $DECLS{$name} = 0;
             print ($cached ? "[no, cached]" : "[no]");
@@ -2111,15 +2143,15 @@ CheckCompiler($$)       # (type, env)
 #       Determine whether of the stated 'devl' exists.
 #
 sub
-CheckDecl($$)           # (type, name)
+CheckDecl($$$)          # (type, name, cpp)
 {
-    my ($type, $name) = @_;
+    my ($type, $name, $cpp) = @_;
 
     my $t_name = $name;
     $t_name =~ s/ /_/g;
 
     my $BASE   = "${type}_${t_name}";
-    my $SOURCE = "${BASE}.c";
+    my $SOURCE = ($cpp ? "${BASE}.cpp" : "${BASE}.c");
     my ($cmd, $cmdparts)
             = CheckCommand($BASE, $SOURCE);
     my $config = CheckConfig();
@@ -2144,13 +2176,18 @@ int main(int argc, char **argv) {
 #define __STRIZE(__x) #__x
 #define STRIZE(__x)  __STRIZE(__x)
     const int ret = strlen(STRIZE($name));
+    FILE *out = fopen("${BASE}.value", "w+");
+    fprintf(out, "%s", STRIZE($name));
     printf("${name}=%s : ", STRIZE($name));
     return ret ? 0 : 1;
 }
 EOT
     close TMP;
 
-    return CheckExec($BASE, $cmd, 1);
+    my $result = "${BASE}.value";
+    return $result
+        if (0 == CheckExec($BASE, $cmd, 1, \$result));
+    return "";
 }
 
 
@@ -2670,15 +2707,16 @@ CheckCommand($$;$)      # (base, source, pkg)
 #       Execute the compile check command.
 #   Parameters:
 #       base - Base application name.
-#       cmd - Compiler command.
+#       cmd  - Compiler command.
 #       exec - Optional boolean flag, if *true* the resulting application is executed.
+#       refRead - Optional file to read; filled with result.
 #   Returns:
 #       cmd, cmdparts
 #
 sub
-CheckExec($$;$)         # (base, cmd, [exec])
+CheckExec($$;$$)        # (base, cmd, [exec], [refRead])
 {
-    my ($base, $cmd, $exec) = @_;
+    my ($base, $cmd, $exec, $refRead) = @_;
 
     print "(cd tmpdir; $cmd)\n"
         if ($o_verbose);
@@ -2705,6 +2743,16 @@ CheckExec($$;$)         # (base, cmd, [exec])
 
     $ret = System($base)
         if (0 == $ret && $exec);
+
+    if (defined $refRead) {
+        if (0 == $ret) {
+            open my $file, '<', $$refRead;
+            $$refRead = <$file>;
+            close $file;
+        } else {
+            $$refRead = "";
+        }
+    }
 
     if (! $o_keep) {
         opendir(DIR, '.') or
@@ -3137,7 +3185,8 @@ Config($$$)             # (type, dir, file)
     $text =~ s/(#undef[^*\n]+)\n/\/* $1 *\/\n/g;
 
     if (scalar @MISSING) {
-        foreach my $config (@MISSING) {
+        foreach my $config (@MISSING) {             
+            next if ($config =~ /^HAVE_DECL__/); # ignore _XXX decls (specials)
             print "missing:  $config\n";
         }
     }
