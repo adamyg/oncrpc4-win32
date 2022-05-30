@@ -24,10 +24,19 @@
  * ==end==
  */
 
+#include "namespace.h"
+
 #include "rpc_win32.h"
 #include "randomid.h"
 
+#if defined(__MINGW32__)
+#if !defined(__MINGW64__)
+#include "mingw_bcrypt.h"
+#endif
+#else
 #pragma comment(lib, "Bcrypt")
+#endif
+
 
 randomid_t
 randomid_new(int bits, long timeo)
@@ -54,7 +63,7 @@ randomid(randomid_t ctx)
 }
 
 
-void 
+void
 randomid_delete(randomid_t ctx)
 {
 	if (ctx) {

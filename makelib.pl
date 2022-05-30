@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.pl,v 1.5 2022/05/22 14:05:28 cvsuser Exp $
+# $Id: makelib.pl,v 1.8 2022/05/30 17:07:13 cvsuser Exp $
 # Makefile generation under WIN32 (MSVC/WATCOMC/MINGW) and DJGPP.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
@@ -25,6 +25,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 # ==end==
+#
+# MSYS/MINGW install
+#
+#   Download and install: msys2-x86_64-YYYYMMDD.exe
+#
+#       pacman -S base-devel
+#       pacman -S mingw-w64-x86_64-toolchain
 #
 
 use strict;
@@ -76,18 +83,20 @@ my %x_environment   = (
             CWARN           => '-W -Wall -Wshadow -Wmissing-prototypes',
             },
 
-        'mingw'         => {    # MingW
+        'mingw'         => {    # MingW32 or MingW64 (default os)
             build_os        => 'mingw32',
             TOOLCHAIN       => 'mingw',
             TOOLCHAINEXT    => '.mingw',
             CC              => 'gcc',
             CXX             => 'g++',
+            VSWITCH         => '--version',
+            VPATTERN        => 'gcc \([^)]*\) ([0-9\.]+)',
             OSWITCH         => '',
             LSWITCH         => '-l',
             XSWITCH         => '-o',
             AR              => 'ar',
             RC              => 'windres -DGCC_WINDRES',
-            DEFS            => '-DHAVE_CONFIG_H -D_WIN32_WINNT=0x501',
+            DEFS            => '-DHAVE_CONFIG_H',
             CINCLUDE        => '',
             CFLAGS          => '-std=gnu11 -fno-strength-reduce',
             CXXFLAGS        => '-std=c++11 -fno-strength-reduce',
@@ -95,12 +104,69 @@ my %x_environment   = (
             CWARN           => '-W -Wall -Wshadow -Wmissing-prototypes',
             CXXWARN         => '-W -Wall -Wshadow',
             LDFLAGS         => '',
-            LDDEBUG         => '',
+            LDDEBUG         => '-g',
             LDRELEASE       => '',
             LDMAPFILE       => '-Xlinker -Map=$(MAPFILE)',
             EXTRALIBS       => '-lshlwapi -lpsapi -lole32 -luuid -lgdi32 '.
-                                    '-luserenv -lnetapi32 -ladvapi32 -lshell32 -lWs2_32',
-            LIBTHREAD       => '-lpthread',
+                                    '-luserenv -lnetapi32 -ladvapi32 -lshell32 -lmpr -lWs2_32',
+            LIBMALLOC       => '-ldlmalloc',
+            },
+
+        'mingw32'       => {    # MingW64 (32-bit mode)
+            build_os        => 'mingw32',
+            TOOLCHAIN       => 'mingw32',
+            TOOLCHAINEXT    => '.mingw32',
+            CC              => 'gcc',
+            CXX             => 'g++',
+            VSWITCH         => '--version',
+            VPATTERN        => 'gcc \([^)]*\) ([0-9\.]+)',
+            OSWITCH         => '',
+            LSWITCH         => '-l',
+            XSWITCH         => '-o',
+            AR              => 'ar',
+            RC              => 'windres -DGCC_WINDRES',
+            DEFS            => '-DHAVE_CONFIG_H',
+            CINCLUDE        => '',
+            CFLAGS          => '-m32 -std=gnu11 -fno-strength-reduce',
+            CXXFLAGS        => '-m32 -std=c++11 -fno-strength-reduce',
+            CDEBUG          => '-g',
+            CWARN           => '-W -Wall -Wshadow -Wmissing-prototypes',
+            CXXWARN         => '-W -Wall -Wshadow',
+            LDFLAGS         => '',
+            LDDEBUG         => '-g',
+            LDRELEASE       => '',
+            LDMAPFILE       => '-Xlinker -Map=$(MAPFILE)',
+            EXTRALIBS       => '-lshlwapi -lpsapi -lole32 -luuid -lgdi32 '.
+                                    '-luserenv -lnetapi32 -ladvapi32 -lshell32 -lmpr -lWs2_32',
+            LIBMALLOC       => '-ldlmalloc',
+            },
+
+        'mingw64'       => {    # MingW64 (64-bit mode)
+            build_os        => 'mingw64',
+            TOOLCHAIN       => 'mingw64',
+            TOOLCHAINEXT    => '.mingw64',
+            CC              => 'gcc',
+            CXX             => 'g++',
+            VSWITCH         => '--version',
+            VPATTERN        => 'gcc \([^)]*\) ([0-9\.]+)',
+            OSWITCH         => '',
+            LSWITCH         => '-l',
+            XSWITCH         => '-o',
+            AR              => 'ar',
+            RC              => 'windres -DGCC_WINDRES',
+            DEFS            => '-DHAVE_CONFIG_H',
+            CINCLUDE        => '',
+            CFLAGS          => '-m64 -std=gnu11 -fno-strength-reduce',
+            CXXFLAGS        => '-m64 -std=c++11 -fno-strength-reduce',
+            CDEBUG          => '-g',
+            CWARN           => '-W -Wall -Wshadow -Wmissing-prototypes',
+            CXXWARN         => '-W -Wall -Wshadow',
+            LDFLAGS         => '',
+            LDDEBUG         => '-g',
+            LDRELEASE       => '',
+            LDMAPFILE       => '-Xlinker -Map=$(MAPFILE)',
+            EXTRALIBS       => '-lshlwapi -lpsapi -lole32 -luuid -lgdi32 '.
+                                    '-luserenv -lnetapi32 -ladvapi32 -lshell32 -lmpr -lWs2_32',
             LIBMALLOC       => '-ldlmalloc',
             },
 
@@ -899,7 +965,19 @@ my @x_headers2      = (     #headers; check only
         'windows.h',
         'wincrypt.h',
         'bcrypt.h',
-        'afunix.h'
+        'intrin.h',
+        'afunix.h'                              # AF_UNIX
+        );
+
+my @x_predefines    = (
+        '_MSC_VER|_MSC_FULL_VER',
+        '__WATCOMC__',
+        '__GNUC__|__GNUC_MINOR__',
+        '__MINGW32__|__MINGW64__|__MINGW64_VERSION_MAJOR|__MINGW64_VERSION_MINOR',
+        '__STDC__|__STDC_VERSION__',
+        'cpp=__cplusplus',
+        'cpp=__STDC_HOSTED__',
+        'cpp=__STDC_NO_ATOMICS__',
         );
 
 my @x_decls         = (     #stdint/intypes.h
@@ -924,7 +1002,7 @@ my @x_decls         = (     #stdint/intypes.h
         'WCHAR_MAX',
         'INTMAX_MIN',
         'INTMAX_MAX',
-        'UINTMAX_MAX',
+        'UINTMAX_MAX'
         );
 
 my @x_types         = (     #stdint/inttypes/types.h
@@ -997,6 +1075,7 @@ my @x_functions     = (
             'strsep', 'strnstr', 'strcasestr', 'strcasestr_l', 'strtonum',
         'strtof', 'strtold', 'strtoll',
         'strtok_r',
+        'sprintf_s', 'wsprintf_s',
         'strverscmp', '__strverscmp',
         'mkdtemp',                              # bsd/linux
         'getw', 'putw',
@@ -1069,9 +1148,11 @@ my $config          = undef;                    # Loaded configuration
 our @HEADERS        = ();
 our @EXTHEADERS     = ();
 our %DECLS          = ();
+our %DECLSVALUE     = ();
 our %TYPES          = ();
 our %SIZES          = ();
 our %FUNCTIONS      = ();
+our %LIBRARIES      = ();
 
 my @INCLUDES        = ();
 my @LIBS            = ();
@@ -1083,12 +1164,14 @@ my $x_tmpdir        = undef;
 my $x_compiler      = '';
 my $x_version       = '';
 my @x_include       = ();
+my @x_sysinclude    = ();
 my $x_command       = '';
 my $x_signature     = undef;
 
 my $o_makelib       = './makelib.in';
 my $o_keep          = 0;
 my $o_verbose       = 0;
+my $o_summary       = 1;
 my $o_version       = undef;
 my $o_gnuwin32      = 'auto';
 my $o_contrib       = 1;
@@ -1109,13 +1192,13 @@ sub ExeRealpath($);
 sub LoadContrib($$$$$);
 sub CheckCompiler($$);
 sub CheckHeader($$);
-sub CheckDecl($$);
+sub CheckDecl($$$);
 sub CheckType($$);
 sub CheckSize($$);
-sub CheckFunction($$);
+sub CheckFunction($$;$);
 sub CheckICUFunction($);
-sub CheckCommand($$;$);
-sub CheckExec($$;$);
+sub CheckCommand($$;$$);
+sub CheckExec($$;$$);
 sub ExpandENV($);
 sub System($);
 sub systemrcode($);
@@ -1191,6 +1274,9 @@ main()
     elsif ('vc1930' eq $cmd)    { $o_version = 1930; $cmd = 'vc'  } elsif ('vc2022' eq $cmd) { $o_version = 1930; $cmd = 'vc' }
     elsif ('owc19' eq $cmd)     { $o_version = 1900; $cmd = 'owc' }
     elsif ('owc20' eq $cmd)     { $o_version = 2000; $cmd = 'owc' }
+    elsif ('mingw' eq $cmd)     { $o_version = 0;    $cmd = 'mingw' }
+    elsif ('mingw32' eq $cmd)   { $o_version = 32;   $cmd = 'mingw' }
+    elsif ('mingw64' eq $cmd)   { $o_version = 64;   $cmd = 'mingw' }
 
     if (! $o_version) { # default versions
         if ($cmd eq 'vc')       { $o_version = 1400; } # review???
@@ -1214,7 +1300,6 @@ main()
 
         #build
         Configure($cmd, $o_version);
-
         foreach (@{$config->{MAKEFILES}}) {
             Makefile($cmd, $_, 'Makefile');
         }
@@ -1231,9 +1316,11 @@ main()
         print CACHE Data::Dumper->Dump([\@EXTHEADERS], [qw(*XXEXTHEADERS)]);
         print CACHE Data::Dumper->Dump([\%CONFIG_H],   [qw(*CONFIG_H)]);
         print CACHE Data::Dumper->Dump([\%DECLS],      [qw(*DECLS)]);
+        print CACHE Data::Dumper->Dump([\%DECLSVALUE], [qw(*DECLSVALUE)]);
         print CACHE Data::Dumper->Dump([\%TYPES],      [qw(*TYPES)]);
         print CACHE Data::Dumper->Dump([\%SIZES],      [qw(*SIZES)]);
         print CACHE Data::Dumper->Dump([\%FUNCTIONS],  [qw(*FUNCTIONS)]);
+        print CACHE Data::Dumper->Dump([\%LIBRARIES],  [qw(*LIBRARIES)]);
         print CACHE "1;\n";
         close CACHE;
 
@@ -1424,8 +1511,6 @@ Configure($$)           # (type, version)
     }
 
     # makelib configuration
-    $x_tokens{"INCLUDE"} = $ENV{"INCLUDE"};
-
     foreach my $entry (keys %$env) {            # target profile
         $x_tokens{$entry} = $$env{$entry};
     }
@@ -1483,8 +1568,9 @@ Configure($$)           # (type, version)
     # header
     my @INCLUDE = ();
 
-    push @INCLUDE, split(/;/, $x_tokens{INCLUDE});
     push @INCLUDE, @x_include;                  # additional search directories
+    push @INCLUDE, split(/;/, $x_tokens{INCLUDE}); # environment INCLUDE
+    push @INCLUDE, @x_sysinclude;               # toolchain etc
 
     print "Scanning: @INCLUDE\n"
         if ($o_verbose);
@@ -1538,32 +1624,54 @@ Configure($$)           # (type, version)
         }
     }
 
-    # decls
-    foreach my $declspec (@x_decls) {
-        my $name   = $declspec;
-        my $define = uc($declspec);
-        $define =~ s/ /_/g;
-        if ($declspec =~ /^(.+):(.+)$/) {
-            $name   = $1;
-            $define = $2;                       # optional explicit #define
+    # predefines/decls
+    foreach my $t_declspec (@x_predefines, @x_decls) {
+        my $cpp = 0;
+
+        if ($t_declspec =~ /^cpp=(.+)$/) {      # cpp prefix
+            $t_declspec = $1;
+            $cpp = 1;
         }
 
-        my $cached = (exists $DECLS{$name});
-        my $status = ($cached ? $DECLS{$name} : -1);
+        my @predefines = split('\|', $t_declspec);
+        foreach my $declspec (@predefines) {
+            my $name   = $declspec;
+            my $define = uc($declspec);
 
-        print "decl:     ${name} ...";
-        print " " x (28 - length($name));
+            $define =~ s/ /_/g;
+            if ($declspec =~ /^(.+):(.+)$/) {
+                $name   = $1;
+                $define = $2;                   # optional explicit #define
+            }
 
-        if (1 == $status ||
-                (-1 == $status && 0 == CheckDecl($type, $name))) {
-            $DECLS{$name} = 1;
-            $CONFIG_H{"HAVE_DECL_${define}"} = 1;
-            print ($cached ? "[yes, cached]" : "[yes]");
-        } else {
-            $DECLS{$name} = 0;
-            print ($cached ? "[no, cached]" : "[no]");
+            my $cached = (exists $DECLS{$name});
+            my $status = ($cached ? $DECLS{$name} : -1);
+            my $value  = ($cached ? $DECLSVALUE{$name} : "");
+
+            print "decl:     ${name} ...";
+            print " " x (28 - length($name));
+
+            if (-1 == $status) {
+                $value = CheckDecl($type, $name, $cpp);
+                $status = 1
+                    if ($value ne "");
+            }
+
+            if (1 == $status) {
+                $DECLS{$name} = 1;
+                $CONFIG_H{"HAVE_DECL_${define}"} = 1;
+                if ($cached) {
+                    print "${define}=${value} [yes, cached]";
+                } else {
+                    $DECLSVALUE{$name} = $value;
+                    print "[yes]";
+                }
+            } else {
+                $DECLS{$name} = 0;
+                print ($cached ? "[no, cached]" : "[no]");
+            }
+            print "\n";
         }
-        print "\n";
     }
 
     # types
@@ -1635,8 +1743,35 @@ Configure($$)           # (type, version)
         print "\n";
     }
 
+    # libraries
+    if (exists $config->{TESTLIBRARIES}) {
+        foreach my $lib (@{$config->{TESTLIBRARIES}}) {
+            my ($libname, @options) = split('\|', $lib);
+            my $cached = (exists $LIBRARIES{$libname});
+            my $status = ($cached ? $LIBRARIES{$libname} : -1);
+
+            print "library:  ${libname} ...";
+            print " " x (28 - length($libname));
+            if (1 == $status ||
+                    (-1 == $status && 0 == CheckFunction($type, undef, $libname))) {
+                $LIBRARIES{$libname} = 1;
+                $libname = uc($libname);
+                $CONFIG_H{"HAVE_LIB${libname}"} = 1;
+                if (scalar @options >= 1) { #eg. LIBTHREAD=pthread
+                    $x_tokens{$options[0]} = $libname;
+                }
+                print ($cached ? "[yes, cached]" : "[yes]");
+            } else {
+                $LIBRARIES{$libname} = 0;
+                print ($cached ? "[no, cached]" : "[no]");
+            }
+            print "\n";
+        }
+    }
+
     # compiler/environment
-    if ($type eq 'vc' || $type eq 'wc' || $type eq 'owc') {
+    # TODO: move to sub-module .... extension of TESTLIBRARIES
+    if ($type eq 'vc' || $type eq 'wc' || $type eq 'owc' || $type eq 'mingw') {
         my $gnuwin32lib = undef;
         my $gnuwin32inc = undef;
 
@@ -2012,7 +2147,7 @@ CheckCompiler($$)       # (type, env)
 {
     my ($type, $env) = @_;
 
-    if ($$env{COMPILERPATH} eq '') {
+    if (!defined $$env{COMPILERPATH} || $$env{COMPILERPATH} eq '') {
         if (exists $$env{COMPILERPATHS}) {
             my @PATHS = split(/\|/, $$env{COMPILERPATHS});
             foreach (@PATHS) {
@@ -2066,6 +2201,42 @@ CheckCompiler($$)       # (type, env)
         }
     }
 
+    if ($x_compiler eq 'gcc') {
+        #   #include <...> search starts here:
+        #    c:\mingw\bin\../lib/gcc/mingw32/9.2.0/include
+        #    c:\mingw\bin\../lib/gcc/mingw32/9.2.0/../../../../include
+        #    c:\mingw\bin\../lib/gcc/mingw32/9.2.0/include-fixed
+        #   End of search list.
+        (-1 != System("gcc -E -Wp,-v - <NUL >${x_tmpdir}/gcc.out 2>&1")) or
+            die "makelib: unable to access compiler <cpp -v>\n";
+
+        open(GCC, "${x_tmpdir}/gcc.out") or
+            die "makelib: cannot open <${x_tmpdir}/gcc.out> : $!";
+        my $line;
+        while (defined($line = <GCC>)) {
+            if ($line =~ /^#include </) {
+                while (defined($line = <GCC>)) {
+                    last if ($line =~ /^End of/i);
+                    $line =~ s/^\s+|\s+$//g;
+                    my $path = realpath($line);
+                    print "gccinc:   <$path>\n";
+                    push @x_sysinclude, $path
+                        if ($path);
+                }
+                last;
+            }
+        }
+
+        if (exists $ENV{"C_INCLUDE_PATH"}) {
+            $x_tokens{INCLUDE} = $ENV{"C_INCLUDE_PATH"};
+        } elsif (exists $ENV{"CPATH"}) {
+            $x_tokens{INCLUDE} = $ENV{"CPATH"};
+        }
+
+    } else {
+        $x_tokens{INCLUDE} = $ENV{"INCLUDE"};
+    }
+
     my $INCLUDES = '';
     $INCLUDES .=                                # <edidentifier.h>, required??
          (exists $$env{ISWITCH} ? $$env{ISWITCH} : '-I')."${CWD}/include ";
@@ -2091,6 +2262,8 @@ CheckCompiler($$)       # (type, env)
     print "Compiler: ${x_compiler}\n";
     print "Version:  ${x_version}\n";
     print "Command:  ${x_command}\n";
+    print "Includes: @{x_include}\n";
+    print "SysInc:   @{x_sysinclude}\n";
 
     # build final command
     $x_command  .= "__FLAGS__ ";
@@ -2111,15 +2284,15 @@ CheckCompiler($$)       # (type, env)
 #       Determine whether of the stated 'devl' exists.
 #
 sub
-CheckDecl($$)           # (type, name)
+CheckDecl($$$)          # (type, name, cpp)
 {
-    my ($type, $name) = @_;
+    my ($type, $name, $cpp) = @_;
 
     my $t_name = $name;
     $t_name =~ s/ /_/g;
 
     my $BASE   = "${type}_${t_name}";
-    my $SOURCE = "${BASE}.c";
+    my $SOURCE = ($cpp ? "${BASE}.cpp" : "${BASE}.c");
     my ($cmd, $cmdparts)
             = CheckCommand($BASE, $SOURCE);
     my $config = CheckConfig();
@@ -2144,13 +2317,18 @@ int main(int argc, char **argv) {
 #define __STRIZE(__x) #__x
 #define STRIZE(__x)  __STRIZE(__x)
     const int ret = strlen(STRIZE($name));
+    FILE *out = fopen("${BASE}.value", "w+");
+    fprintf(out, "%s", STRIZE($name));
     printf("${name}=%s : ", STRIZE($name));
     return ret ? 0 : 1;
 }
 EOT
     close TMP;
 
-    return CheckExec($BASE, $cmd, 1);
+    my $result = "${BASE}.value";
+    return $result
+        if (0 == CheckExec($BASE, $cmd, 1, \$result));
+    return "";
 }
 
 
@@ -2287,19 +2465,19 @@ EOT
 
 
 #   Function: CheckFunction
-#       Check that the function exists
+#       Check that the function and/or library exists.
 #   Returns:
 #       0 on success, otherwise non-zero.
 #
 sub
-CheckFunction($$)       # (type, name)
+CheckFunction($$;$)     # (type, name, [libname])
 {
-    my ($type, $name) = @_;
+    my ($type, $name, $libname) = @_;
 
-    my $BASE   = "${type}_${name}";
+    my $BASE   = ($name ? "${type}_${name}" : "${type}_lib${libname}");
     my $SOURCE = "${BASE}.c";
     my ($cmd, $cmdparts)
-            = CheckCommand($BASE, $SOURCE);
+            = CheckCommand($BASE, $SOURCE, undef, $libname);
     my $config = CheckConfig();
 
     my $tmpsource = "${x_tmpdir}/$SOURCE";
@@ -2321,9 +2499,21 @@ EOT
     }
 
     ##############################################################################
+    #   library check only
+    #
+    if (!defined $name) {
+        print TMP<<EOT;
+${config}
+${headers}
+int main(int argc, char **argv) {
+    return 0;
+}
+EOT
+
+    ##############################################################################
     #   alloca -- possible intrusive
     #
-    if ($name =~ /alloca$/) {
+    } elsif ($name =~ /alloca$/) {
         $config  = "/*see: AC_FUNC_ALLOCA for details*/\n";
         $config .= "\n#define HAVE_STDLIB_H"
             if (exists $CONFIG_H{HAVE_STDLIB_H});
@@ -2608,9 +2798,9 @@ CheckConfig()
 #       cmd, cmdparts
 #
 sub
-CheckCommand($$;$)      # (base, source, pkg)
+CheckCommand($$;$$)     # (base, source, [pkg], [libname])
 {
-    my ($base, $source, $pkg) = @_;
+    my ($base, $source, $pkg, $libname) = @_;
 
     my $env = $x_environment{$x_signature};
     my $cmd = $x_command;
@@ -2641,7 +2831,13 @@ CheckCommand($$;$)      # (base, source, pkg)
                 $lib .= (exists $$env{LSWITCH} ? $$env{LSWITCH} : '-l').$_.' '
                     if ($_);
             }
+        } else {
+            die "CheckCommand: unexpected package '$pkg'\n";
         }
+    }
+
+    if (defined $libname) {
+        $lib .= '-l'.$libname.' ';
     }
 
     while ($flags =~ /\@(.+)\@/) {              # expand @xxxx@
@@ -2670,15 +2866,16 @@ CheckCommand($$;$)      # (base, source, pkg)
 #       Execute the compile check command.
 #   Parameters:
 #       base - Base application name.
-#       cmd - Compiler command.
+#       cmd  - Compiler command.
 #       exec - Optional boolean flag, if *true* the resulting application is executed.
+#       refRead - Optional file to read; filled with result.
 #   Returns:
 #       cmd, cmdparts
 #
 sub
-CheckExec($$;$)         # (base, cmd, [exec])
+CheckExec($$;$$)        # (base, cmd, [exec], [refRead])
 {
-    my ($base, $cmd, $exec) = @_;
+    my ($base, $cmd, $exec, $refRead) = @_;
 
     print "(cd tmpdir; $cmd)\n"
         if ($o_verbose);
@@ -2705,6 +2902,16 @@ CheckExec($$;$)         # (base, cmd, [exec])
 
     $ret = System($base)
         if (0 == $ret && $exec);
+
+    if (defined $refRead) {
+        if (0 == $ret) {
+            open my $file, '<', $$refRead;
+            $$refRead = <$file>;
+            close $file;
+        } else {
+            $$refRead = "";
+        }
+    }
 
     if (! $o_keep) {
         opendir(DIR, '.') or
@@ -3138,6 +3345,7 @@ Config($$$)             # (type, dir, file)
 
     if (scalar @MISSING) {
         foreach my $config (@MISSING) {
+            next if ($config =~ /^HAVE_DECL__/); # ignore _XXX decls (specials)
             print "missing:  $config\n";
         }
     }

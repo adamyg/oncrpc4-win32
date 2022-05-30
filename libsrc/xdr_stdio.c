@@ -56,6 +56,10 @@ __RCSID("$NetBSD: xdr_stdio.c,v 1.19 2013/03/11 20:19:30 tron Exp $");
 #include <sys/socket.h>
 #include <stdio.h>
 
+#ifndef _STDIO_H_
+#define _STDIO_H_
+#endif
+
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 

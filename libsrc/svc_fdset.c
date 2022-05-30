@@ -32,7 +32,7 @@
 #include <sys/cdefs.h>
 __RCSID("$NetBSD: svc_fdset.c,v 1.16 2017/04/18 11:35:34 maya Exp $");
 
-
+#include "namespace.h"
 #include "reentrant.h"
 
 #include <sys/fd_set.h>

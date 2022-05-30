@@ -1,7 +1,7 @@
 #ifndef WIN32_CONFIG_H_INCLUDED
 #define WIN32_CONFIG_H_INCLUDED
 /* -*- mode: c; set-indent: 4; -*- */
-/* $Id: w32config.hin,v 1.4 2022/05/21 17:23:09 cvsuser Exp $
+/* $Id: w32config.hin,v 1.5 2022/05/30 17:07:13 cvsuser Exp $
  * Machine configuration.
  *
  * System dependent <config.h> configuration template,
@@ -36,7 +36,9 @@
 
 #if !defined(_MSC_VER)
 #if !defined(__WATCOMC__)
-#error config.h: MSVC or WATCOMC targets only ...
+#if !defined(__MINGW32__)
+#error config.h: MSVC, WATCOMC or MINGW32 targets ...
+#endif
 #endif
 #endif /*MSC || WATCOM*/
 

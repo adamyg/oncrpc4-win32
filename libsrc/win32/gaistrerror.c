@@ -25,6 +25,8 @@
  * ==end==
  */
 
+#include "namespace.h"
+
 #include <sys/param.h>
 #include <stddef.h>
 #include <unistd.h>

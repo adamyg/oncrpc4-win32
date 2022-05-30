@@ -29,7 +29,11 @@
 #include <sys/socket.h>
 
 struct sockaddr_un {
+#if defined(__MINGW32__)
+	short sun_family;		/* AF_LOCAL */
+#else
 	ADDRESS_FAMILY sun_family;	/* AF_LOCAL */
+#endif
 	unsigned char sun_len;		/* length of sockaddr struct */
 	char sun_path[108];		/* pathname */
 };

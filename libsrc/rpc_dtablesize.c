@@ -31,7 +31,6 @@
  *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char *sccsid = "@(#)rpc_dtablesize.c 1.2 87/08/11 Copyr 1987 Sun Micro";
@@ -43,6 +42,7 @@ __RCSID("$NetBSD: rpc_dtablesize.c,v 1.16 2013/03/11 20:19:29 tron Exp $");
 
 #include "namespace.h"
 
+#include <sys/cdefs.h>
 #include <unistd.h>
 
 int _rpc_dtablesize(void);	/* XXX */

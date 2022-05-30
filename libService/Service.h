@@ -33,7 +33,7 @@
 #undef max
 #endif
 
-#include "../../libNTService/NTService.h"
+#include "../libNTService/NTService.h"
 
 #include "SimpleConfig.h"
 #include "Logger.h"

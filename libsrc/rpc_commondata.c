@@ -40,6 +40,8 @@ __RCSID("$NetBSD: rpc_commondata.c,v 1.14 2015/11/08 02:46:53 christos Exp $");
 #endif
 #endif
 
+#include "namespace.h"
+
 #include <rpc/rpc.h>
 #include "svc_fdset.h"
 

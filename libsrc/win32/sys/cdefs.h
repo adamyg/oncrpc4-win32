@@ -53,7 +53,7 @@
 #endif
 
 
-/* 
+/*
  *  Library binding.
  */
 #if !defined(LIBRPC_API)
@@ -82,7 +82,7 @@
 #endif
 #endif //!LIBW32_API
 
-/* 
+/*
  *  Calling convention.
  */
 #ifndef __BEGIN_DECLS

@@ -41,14 +41,16 @@
 #define ENOTSUP ENOSYS
 #endif
 
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || \
+        (defined(_MSC_VER) && !defined(HAVE_TIMESPEC_GET))
+#define  HAVE_XGETTIMEOFDAY
 #define  WIN32_LEAN_AND_MEAN
 #include <WinSock2.h>
 #include <Windows.h>
 #include <stdint.h>
 
 static int
-wc_gettimeofday(struct timeval *tp, struct timezone *tzp)
+xgettimeofday(struct timeval *tp, struct timezone *tzp)
 {
     // Magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
     // until 00:00:00 January 1, 1970
@@ -70,21 +72,16 @@ wc_gettimeofday(struct timeval *tp, struct timezone *tzp)
 #endif //__WATCOMC__
 
 
+#if !defined(__MINGW32__)
 static int
 clock_gettime_realtime(struct timespec *time_spec)
 {
 #if defined(HAVE_TIMESPEC_GET)
     timespec_get(time_spec, TIME_UTC);
 
-#elif defined(_MSC_VER)
-    struct __timeb64 ftime;
-    _ftime64(&ftime);
-    time_spec->tv_sec = ftime.time + lt.timezone;
-    time_spec->tv_usec = ftime.millitm * 1000000;
-
-#elif defined(__WATCOMC__)
+#elif defined(HAVE_XGETTIMEOFDAY)
     struct timeval tv;
-    wc_gettimeofday(&tv, NULL);
+    xgettimeofday(&tv, NULL);
     TIMEVAL_TO_TIMESPEC(&tv, time_spec);
 
 #else
@@ -138,6 +135,7 @@ clock_gettime(int clockid, struct timespec *time_spec)
     errno = ENOTSUP;
     return -1;
 }
+#endif  /*__MINGW32__*/
 
 
 int

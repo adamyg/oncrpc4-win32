@@ -44,6 +44,15 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS         /* disable deprecate warnings */
 #endif
 
+#if defined(__MINGW32__)
+#if (_WIN32_WINNT < 0x601)
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x601
+#endif
+#undef _WIN32_VER
+#define _WIN32_VER _WIN32_WINNT
+#endif
+
 #if defined(_MSC_VER)
 #pragma warning (disable : 4127)                // conditional expression is constant
 #pragma warning (disable : 4702)                // unreachable code

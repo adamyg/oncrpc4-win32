@@ -79,8 +79,8 @@ pidfile(const char *appname)
 
 	/* _PATH_VARRUN includes trailing / */
 #if defined(_WIN32)
-        tmprtn = GetTempPathA(sizeof(tmppath), tmppath); //TODO/XXX
-	if (tmprtn <= 0 || tmprtn >= sizeof(tmppath) ||
+	tmprtn = GetTempPathA(sizeof(tmppath), tmppath); //TODO/XXX
+	if (tmprtn <= 0 || tmprtn >= (int)sizeof(tmppath) ||
 			asprintf(&pidfile_path, "%s%s.pid", tmppath, appname) == -1)
 		return (-1);
 #else

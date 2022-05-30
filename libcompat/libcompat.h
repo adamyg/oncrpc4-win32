@@ -213,6 +213,7 @@ extern int pidfile(const char *appname);
 #endif /*HAVE_PIDFILE*/
 
 #if !defined(HAVE_TIMEGM)       /*unistd.h*/
+struct tm;
 extern time_t timegm(struct tm *tm);
 #if !defined(LIBCOMPAT_SOURCE)
 #define HAVE_TIMEGM

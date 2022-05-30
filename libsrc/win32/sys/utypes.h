@@ -39,7 +39,11 @@ typedef unsigned long u_long;
 
 #if !defined(_SSIZE_T_DEFINED_)
 #define _SSIZE_T_DEFINED_
+#ifdef _WIN64
+typedef __int64 ssize_t;
+#else
 typedef signed ssize_t;
+#endif
 #endif
 
 typedef uint8_t u_int8_t;
@@ -47,9 +51,11 @@ typedef uint16_t u_int16_t;
 typedef uint32_t u_int32_t;
 typedef uint64_t u_int64_t;
 
+#if !defined(__MINGW32__) || defined(__MINGW64__)
 typedef struct {
 	uint32_t __bits[4];
 } sigset_t;
+#endif
 
 #if defined(__WATCOMC__)
 typedef unsigned nfds_t;
@@ -59,9 +65,14 @@ typedef size_t nfds_t;
 
 typedef char *caddr_t;
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 typedef int gid_t;
 typedef int uid_t;
+typedef int id_t;
+#endif
+
+#if defined(_MSC_VER) || \
+        (defined(__MINGW32__) && !defined(__MINGW64__))
 typedef int pid_t;
 #endif
 

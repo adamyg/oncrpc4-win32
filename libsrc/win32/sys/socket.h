@@ -28,6 +28,42 @@
 
 #include <sys/cdefs.h>
 #include <sys/utypes.h>
+#if !defined(_WINSOCK2_H)                       /* MINGW32 guard */
 #include <rpc_win32.h>
+#endif
+
+/* missing definitions */
+
+#if defined(_MSC_VER) || defined(__MINGW64__)
+#include <Iphlpapi.h>                           /* if_nametoindex() */
+#endif
+
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+INT WSAAPI inet_pton(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
+PCSTR WSAAPI inet_ntop(INT Family, const VOID *pAddr, PSTR pStringBuf, size_t StringBufSize);
+
+ULONG WINAPI if_nametoindex(PCSTR InterfaceName);
+
+typedef struct addrinfo ADDRINFOA, *PADDRINFOA;
+INT WSAAPI getaddrinfo(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA *pHints, PADDRINFOA *ppResult);
+VOID WSAAPI freeaddrinfo(PADDRINFOA pAddrInfo);
+#endif
+
+#if defined(__WATCOMC__)
+#if !defined(HAVE_TIMESPEC)                     /* missing definitions */
+#define HAVE_TIMESPEC
+#endif
+#if !defined(_TIMESPEC_DEFINED) && (__WATCOMC__ < 1300)
+#define _TIMESPEC_DEFINED                       /* OWC1.9=1290, OWC2.0=1300 */
+struct timespec {
+        time_t tv_sec;
+        long tv_nsec;
+};
+#else
+#include <signal.h>
+#endif  /*TIMESPEC_STRUCT_T*/
+
+ULONG WINAPI if_nametoindex(PCSTR InterfaceName);
+#endif
 
 /*end*/

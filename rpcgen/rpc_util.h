@@ -113,10 +113,10 @@ int isvectordef(const char *, relation);
 char *locase(const char *);
 void pvname_svc(const char *, const char *);
 void pvname(const char *, const char *);
-#if defined(_MSC_VER) || defined(__WATCOMC__)
+#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MINGW32__)
 void error(const char *, ...);
 #else
-__dead __printflike(1, 2) void error(const char *, ...);
+/*__dead*/ __printflike(1, 2) void error(const char *, ...);
 #endif
 void crash(void);
 void record_open(const char *);
@@ -127,6 +127,7 @@ void tabify(FILE *, int);
 char *make_argname(const char *, const char *);
 void add_type(int, const char *);
 bas_type *find_type(const char *);
+
 /*
  * rpc_cout routines 
  */

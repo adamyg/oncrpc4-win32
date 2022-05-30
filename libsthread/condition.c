@@ -5,18 +5,18 @@
  *  All rights reserved.
  *
  *  This file is part of oncrpc4-win32.
- *  
+ *
  *  The applications are free software: you can redistribute it
  *  and/or modify it under the terms of the oncrpc4-win32 License.
- *  
+ *
  *  Redistributions of source code must retain the above copyright
  *  notice, and must be distributed with the license document above.
- *  
+ *
  *  Redistributions in binary form must reproduce the above copyright
  *  notice, and must include the license document above in
  *  the documentation and/or other materials provided with the
  *  distribution.
- *  
+ *
  *  This project is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -38,7 +38,7 @@
 #define ETIMEDOUT EAGAIN
 #endif
 
-static inline DWORD
+static __inline DWORD
 timespec_to_msec(const struct timespec *a)
 {
     return (DWORD)(a->tv_sec * 1000) + (a->tv_nsec / 1000000);
@@ -76,7 +76,7 @@ pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 }
 
 
-static void __inline
+static __inline void
 condition_init_once(pthread_cond_t *cond)
 {
 #if !defined(NDEBUG)

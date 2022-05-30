@@ -30,15 +30,19 @@
  * ==end==
  */
 
+#include "namespace.h"
+
 #include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 #include <stddef.h>
 #include <unistd.h>
 #include <poll.h>
 
-#include "rpc_win32.h"
-
+#if !defined(__MINGW32__)
 #pragma comment(lib, "Kernel32.lib")
 #pragma comment(lib, "Ws2_32.lib")
+#endif
 
 #if defined(_DEBUG)
 #define __ISDTRACE
@@ -47,21 +51,6 @@
 #define __DTRACE(x__)
 #endif
 
-static int pipe_create(int type);
-static int pipe_bind(struct Pipe *pipe, const struct sockaddr *addr, socklen_t addrlen);
-static int pipe_listen(struct Pipe *pipe);
-static int pipe_connect(struct Pipe *pipe, const struct sockaddr *addr, socklen_t addrlen);
-static int pipe_accept(int pipefd, struct Pipe *pipe, struct sockaddr *addr, int *addrlen);
-static int pipe_ioctlsocket(struct Pipe *pipe, long cmd, u_long *argp);
-static int pipe_io_read(struct Pipe *pipe);
-static int pipe_io_complete(struct Pipe *pipe);
-static int pipe_read(struct Pipe *pipe, char *buffer, unsigned count);
-static int pipe_write(struct Pipe *pipe, const void *buffer, unsigned count);
-static int pipe_getsockname(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen);
-static int pipe_getpeername(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen);
-static int pipe_getsockopt(struct Pipe *pipe, int level, int optname, void *optval, socklen_t *optlen);
-static int pipe_setsockopt(struct Pipe *pipe, int level, int optname, const void *optval, socklen_t optlen);
-static int pipe_close(int pipefd, struct Pipe *pipe);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //  misc
@@ -119,7 +108,12 @@ wsaerrno(void)
 }
 
 
+#if defined(__MINGW32__)
+static __thread char x_strerror[1024];
+#else
 static __declspec(thread) char x_strerror[1024];
+#endif
+
 
 const char *
 wsastrerror(int xerrno)
@@ -189,6 +183,22 @@ struct FileDescriptor {
 static CRITICAL_SECTION fds_lock;
 static int fds_next;
 static struct FileDescriptor fds_win32[SOCKFD_MAX];
+
+static int pipe_create(int type);
+static int pipe_bind(struct Pipe *pipe, const struct sockaddr *addr, socklen_t addrlen);
+static int pipe_listen(struct Pipe *pipe);
+static int pipe_connect(struct Pipe *pipe, const struct sockaddr *addr, socklen_t addrlen);
+static int pipe_accept(int pipefd, struct Pipe *pipe, struct sockaddr *addr, int *addrlen);
+static int pipe_ioctlsocket(struct Pipe *pipe, long cmd, u_long *argp);
+static int pipe_io_read(struct Pipe *pipe);
+static int pipe_io_complete(struct Pipe *pipe);
+static int pipe_read(struct Pipe *pipe, char *buffer, unsigned count);
+static int pipe_write(struct Pipe *pipe, const void *buffer, unsigned count);
+static int pipe_getsockname(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen);
+static int pipe_getpeername(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen);
+static int pipe_getsockopt(struct Pipe *pipe, int level, int optname, void *optval, socklen_t *optlen);
+static int pipe_setsockopt(struct Pipe *pipe, int level, int optname, const void *optval, socklen_t optlen);
+static int pipe_close(int pipefd, struct Pipe *pipe);
 
 
 static int
@@ -265,12 +275,12 @@ fd_assign(SOCKET sock, struct Pipe *pipe)
 
 	EnterCriticalSection(&fds_lock);
 	for (loops = (fds_next ? 2 : 1); loops--;) {
-		for (fd = fds_next; fd < _countof(fds_win32); ++fd) {
+		for (fd = fds_next; fd < (int)_countof(fds_win32); ++fd) {
 			if (0 == fds_win32[fd].sock.handle) {
 				break;
 			}
 		}
-		if (fd < _countof(fds_win32)) {
+		if (fd < (int)_countof(fds_win32)) {
 			assert(0 == fds_win32[fd].sock.handle);
 			if (INVALID_SOCKET != sock) {
 				HANDLE wsaevt = WSACreateEvent();
@@ -395,7 +405,7 @@ rpc_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 	} else if ((sock = issockfd(sockfd)) != NULL) {
 		SOCKET s;
-		if ((s = connect(sock->handle, addr, addrlen)) == SOCKET_ERROR) {
+		if ((s = connect(sock->handle, addr, addrlen)) == (SOCKET)SOCKET_ERROR) {
 			wsaerrno();
 		} else if ((ret = rpc_register_socket(s)) == -1) {
 			closesocket(s);
@@ -492,7 +502,7 @@ rpc_accept(int sockfd, struct sockaddr *addr, int *addrlen)
 
 	if ((sock = issockfd(sockfd)) != NULL) {
 		SOCKET s;
-		if ((s = accept(sock->handle, addr, addrlen)) == SOCKET_ERROR) {
+		if ((s = accept(sock->handle, addr, addrlen)) == (SOCKET)SOCKET_ERROR) {
 			wsaerrno();
 			ret = -1;
 		} else if ((ret = rpc_register_socket(s)) == -1) {
@@ -888,6 +898,10 @@ pipe_listen(struct Pipe *pipe)
 		return -1;
 	}
 
+#if !defined(PIPE_REJECT_REMOTE_CLIENTS)
+#define PIPE_REJECT_REMOTE_CLIENTS  0x00000008
+#endif
+
 	snprintf(pipe_name, sizeof(pipe_name)-1, "\\\\.\\pipe\\%s", pipe->addr.sun_path);
 	pipe->handle = CreateNamedPipeA(pipe_name,
 			    PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -1046,7 +1060,7 @@ static int
 pipe_ioctlsocket(struct Pipe *pipe, long cmd, u_long *argp)
 {
 	__DTRACE(("pipe_ioctl(%p)\n", pipe))
-	if (FIONBIO == cmd) {
+	if (FIONBIO == (unsigned long)cmd) {
 		if (NULL != argp) {
 			pipe->blocking = (*argp ? FALSE : TRUE);
 			return 0;
@@ -1256,7 +1270,7 @@ pipe_getsockname(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen)
 	} else if (NULL == addr || NULL == addrlen) {
 		errno = EFAULT;
 		return -1;
-	} else if (*addrlen < sizeof(struct sockaddr_un)) {
+	} else if (*addrlen < (socklen_t)sizeof(struct sockaddr_un)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -1277,7 +1291,7 @@ pipe_getpeername(struct Pipe *pipe, struct sockaddr *addr, socklen_t *addrlen)
 	} else if (NULL == addr || NULL == addrlen) {
 		errno = EFAULT;
 		return -1;
-	} else if (*addrlen < sizeof(struct sockaddr_un)) {
+	} else if (*addrlen < (socklen_t)sizeof(struct sockaddr_un)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -1386,12 +1400,13 @@ rpc_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	}
 
 	if (pipes) {
-		const DWORD waittm = (timeout < 0 ? INFINITE : timeout);
+		const DWORD waittm = (timeout < 0 ? INFINITE : (DWORD)timeout);
 		DWORD evt;
 
 		__DTRACE(("poll(%p) : wait-events (%d,%u)\n", fds, nfds, waittm))
-		if ((evt = WSAWaitForMultipleEvents(nfds, handles, FALSE, waittm, TRUE)) >= WSA_WAIT_EVENT_0 &&
-				evt < (STATUS_WAIT_0 + nfds)) {
+		assert(0 == WSA_WAIT_EVENT_0);
+
+		if ((evt = WSAWaitForMultipleEvents(nfds, handles, FALSE, waittm, TRUE)) < (STATUS_WAIT_0 + nfds)) {
 			const SHORT events = fds[evt -= WSA_WAIT_EVENT_0].events | POLLHUP | POLLERR | POLLNVAL;
 
 			revents = 0;
@@ -1480,9 +1495,9 @@ rpc_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struc
 
 	// XXX: current rpc usage (readfds only).
 	// XXX: unless changed poll() is the default interface (see: svc_run)
-        assert(0 == nfds);
+	assert(0 == nfds);
 	assert(NULL == writefds && NULL == exceptfds);
-	if (writefds || exceptfds) {
+	if (writefds || exceptfds || nfds != 0) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -1493,26 +1508,26 @@ rpc_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struc
 		return -1;
 	}
 
-        nfds = readfds->fd_count;
+	nfds = readfds->fd_count;
 	fd_array = readfds->fd_array;
-	for (n = 0; n < nfds; ++n) {
+	for (n = 0; n < (nfds_t)nfds; ++n) {
 		fds[n].fd = fd_array[n];
 		fds[n].events = POLLIN;
 	}
 
 	if (timeout) {
 		polltm = (timeout->tv_sec * 1000) + (timeout->tv_usec / 1000);
-        }
+	}
 
-       	FD_ZERO(readfds);
+	FD_ZERO(readfds);
 	if ((ret = rpc_poll(fds, nfds, polltm)) > 0) {
 		int t_ret = 0;
-		for (n = 0; n < nfds; ++n) {
+		for (n = 0; n < (nfds_t)nfds; ++n) {
 			if (fds[n].revents) {
-				fd_array[t_ret++] =  fds[n].fd;
+				fd_array[t_ret++] = fds[n].fd;
 			}
 		}
-        	readfds->fd_count = t_ret;
+		readfds->fd_count = t_ret;
 		assert(t_ret == ret);
 		ret = t_ret;
 	}

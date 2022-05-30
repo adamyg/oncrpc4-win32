@@ -1,5 +1,5 @@
 //#include <edidentifier.h>
-//__CIDENT_RCSID(gr_w32_getopt_c,"$Id: getopt_long.c,v 1.1 2022/05/15 08:17:47 cvsuser Exp $")
+//__CIDENT_RCSID(gr_w32_getopt_c,"$Id: getopt_long.c,v 1.2 2022/05/29 14:32:55 cvsuser Exp $")
 
 /*-
  * Copyright (c) 2000 The NetBSD Foundation, Inc.
@@ -334,6 +334,7 @@ getopt(nargc, nargv, options)
 #endif  //REPLACE_GETOPT
 
 
+extern int __import_getopt(int nargc, char * const *nargv, const char *ostr);
 int
 __import_getopt(int nargc, char * const *nargv, const char *ostr)
 {

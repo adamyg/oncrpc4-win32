@@ -26,9 +26,29 @@
  * ==end==
  */
 
+
 #include <sys/cdefs.h>
+#if defined(__MINGW32__)
+#include_next <sys/time.h>
+#else
 #include <sys/socket.h>
+#endif
 #include <time.h>
+
+#if defined(__WATCOMC__)                        /* missing definitions */
+#if !defined(HAVE_TIMESPEC)
+#define HAVE_TIMESPEC
+#endif
+#if !defined(_TIMESPEC_DEFINED) && (__WATCOMC__ < 1300)
+#define _TIMESPEC_DEFINED                       /* OWC1.9=1290, OWC2.0=1300 */
+struct timespec {
+        time_t tv_sec;
+        long tv_nsec;
+};
+#else
+#include <signal.h>
+#endif  /*TIMESPEC_STRUCT_T*/
+#endif
 
 #if !defined(TIMEVAL_TO_TIMESPEC)
 #define TIMEVAL_TO_TIMESPEC(tv, ts) {       \

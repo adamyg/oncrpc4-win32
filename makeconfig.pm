@@ -1,4 +1,4 @@
-# $Id: makeconfig.pm,v 1.2 2022/05/21 06:56:51 cvsuser Exp $
+# $Id: makeconfig.pm,v 1.3 2022/05/29 14:26:48 cvsuser Exp $
 # Makefile generation under Win32.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
@@ -60,6 +60,7 @@ our @MAKEFILES      = ();                       # local makefiles; build order
 
 our @LIBRARIES      = ();                       # local libraries -l<xxx> lib<xxx>.lib
 our @LIBRARIES2     = ();                       # local libraries -l<xxx> xxx.lib
+our @TESTLIBRARIES  = ();                       # external libraries, tested whether linkable
 our @OPTLIBRARIES   = ();                       # optional libraries
 
 my  $CC = '';
@@ -132,13 +133,14 @@ sub LoadProfile($$)
 # Returns:
 #   nothing
 #
-sub LoadConfigure($$$$$)
+sub LoadConfigure($$$$$$)
 {
     my ($self, $makelib, $type_, $env_, $tokens_, $verbose_) = @_;
 
     $x_env = $env_;
     $x_tokens = $tokens_;
     $o_verbose = $verbose_;
+
     $self->__ImportConfigurations($makelib);
 
     print "loading:  ${makelib}, <${TOOLCHAIN}>\n";
@@ -307,6 +309,7 @@ sub __ExportConfigurations
     $self->{MAKEFILES}      = \@MAKEFILES;
     $self->{LIBRARIES}      = \@LIBRARIES;
     $self->{LIBRARIES2}     = \@LIBRARIES2;
+    $self->{TESTLIBRARIES}  = \@TESTLIBRARIES;
     $self->{OPTLIBRARIES}   = \@OPTLIBRARIES;
 
     $$x_tokens{PACKAGE_VERSION} = $PACKAGE_VERSION;
@@ -395,7 +398,8 @@ sub __PrintArray
 }
 
 
-sub __PrintArrayX {
+sub __PrintArrayX
+{
     my $prefix = shift || '';
     my $suffix = shift || '';
     my $s = '';

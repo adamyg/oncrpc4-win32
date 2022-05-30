@@ -40,7 +40,8 @@
 #include <time.h>
 #include <assert.h>
 
-#if defined(_MSC_VER) || defined(__WATCOMC__)
+#if defined(_MSC_VER) || defined(__WATCOMC__) || \
+        (defined(__MINGW32__) && !defined(HAVE_TIMEGM))
 
 /*
  * Simplifed version of timegm() that wont allow out of bound values.

@@ -27,7 +27,7 @@
  */
 
 #include <sys/cdefs.h>
-#include <rpc_win32.h>
+#include <sys/socket.h>
 #include <poll.h>
 
 /*end*/

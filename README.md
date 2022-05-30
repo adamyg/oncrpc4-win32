@@ -25,4 +25,8 @@ $ ./rpcinfo.exe
    100000    2    local     /var/run/rpcbind.sock  portmapper superuser
 ````
 
+# Supported toolchains
 
+   * VS2015+
+   * OpenWatcom 1.9+
+   * Mingw64

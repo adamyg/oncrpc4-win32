@@ -6,18 +6,18 @@
  *  All rights reserved.
  *
  *  This file is part of oncrpc4-win32.
- *  
+ *
  *  The applications are free software: you can redistribute it
  *  and/or modify it under the terms of the oncrpc4-win32 License.
- *  
+ *
  *  Redistributions of source code must retain the above copyright
  *  notice, and must be distributed with the license document above.
- *  
+ *
  *  Redistributions in binary form must reproduce the above copyright
  *  notice, and must include the license document above in
  *  the documentation and/or other materials provided with the
  *  distribution.
- *  
+ *
  *  This project is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -33,7 +33,16 @@
 
 #include <time.h>
 
-#if defined(__WATCOMC__)
+#if defined(_MSC_VER)
+#if !defined(_TIMESPEC_DEFINED) && !defined(HAVE_TIMESPEC_GET)
+#define _TIMESPEC_DEFINED /* 2013 < */
+struct timespec {
+        time_t tv_sec;
+        long tv_nsec;
+};
+#endif /*TIMESPEC_STRUCT_T*/
+
+#elif defined(__WATCOMC__)
 #if !defined(_TIMESPEC_DEFINED) && (__WATCOMC__ < 1300)
 #define _TIMESPEC_DEFINED /* OWC1.9=1290, OWC2.0=1300 */
 struct timespec {
@@ -44,6 +53,7 @@ struct timespec {
 #include <signal.h>
 #endif /*TIMESPEC_STRUCT_T*/
 #endif /*WATCOMC*/
+
 #if !defined(HAVE_TIMESPEC)
 #define HAVE_TIMESPEC
 #endif

@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.in,v 1.3 2022/05/21 06:57:10 cvsuser Exp $
+# $Id: makelib.in,v 1.5 2022/05/30 17:07:13 cvsuser Exp $
 # -*- mode: perl; tabs: 8; indent-width: 4; -*-
 # makelib configuration
 #
@@ -49,6 +49,7 @@ $PACKAGE_FILE   = 'package.h';
 @LIBRARIES2     = (    # local libraries -l<xxx> xxx.lib
         );
 
+@TESTLIBRARIES  = ();  # library test
 @OPTLIBRARIES   = ();  # optional libraries
 
 ## Makefiles
@@ -104,6 +105,25 @@ Configure()
                 add_define('__STDC_WANT_LIB_EXT1__');
 
                 set_winsdk('C:/Program Files (x86)/Windows Kits/8.0/Lib/win8/um/x86');
+        }
+
+        ################################################################################
+        # MingGW
+
+        if ($TOOLCHAIN =~ /^mingw/) {
+
+                remove_define('WIN32');
+                add_define('HAVE_CONFIG_H');
+                add_define('WIN32_WINNT=0x601');
+
+                if ($TOOLCHAIN =~ /^mingw64/) {
+                    add_system_library('-lDbghelp');    # debug helpers
+                    add_system_library('-lBcrypt');
+                }
+                add_system_library('-lIphlpapi');
+                add_system_library('-lVersion');
+
+                push @TESTLIBRARIES, "pthread|LIBTHREAD";
         }
 }
 

@@ -24,9 +24,7 @@
  * ==end==
  */
 
-#if !defined(_CRT_SECURE_NO_WARNINGS)
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+#include "namespace.h"
 
 #include <sys/cdefs.h>
 #include <sys/time.h>
@@ -52,7 +50,7 @@
 //
 //  DESCRIPTION
 //
-//      The gettimeofday() function shall obtain the current time, expressed aa seconds and 
+//      The gettimeofday() function shall obtain the current time, expressed aa seconds and
 //      microseconds since the Epoch, and store it in the timeval structure pointed to by tp.
 //      The resolution of the system clock is unspecified.
 //
@@ -81,7 +79,7 @@ gettimeofday(struct timeval *tv, /*struct timezone*/ void *tz)
 
 #elif defined(__MINGW32__)
 #undef gettimeofday
-        return gettimeofday(tv, tz)
+        return gettimeofday(tv, tz);
 
 #else //DEFAULT
         FILETIME ft;
@@ -100,3 +98,4 @@ gettimeofday(struct timeval *tv, /*struct timezone*/ void *tz)
 }
 
 /*end*/
+

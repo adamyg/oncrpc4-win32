@@ -227,18 +227,19 @@ vxsyslog(int pri, const char *fmt, va_list ap, const char *suffix)
 			for (f = fmt_copy; 0 != (ch = *fmt++) && left;) {
 				if ('%' == ch && left > 4) { // strerror
 					if ('m' == *fmt) {
-						int len = snprintf(f, left, "%s", strerror(saved_errno));
-						if (len < 0 || len >= left) len = left;
-						f += len, left -= len;
+						int t_len = snprintf(f, left, "%s", strerror(saved_errno));
+						if (t_len < 0 || t_len >= left) 
+							t_len = left;
+						f += t_len, left -= t_len;
 						++fmt;
 						continue;
 
 					} else if ('M' == *fmt) { // windows error
 						DWORD dwError = GetLastError();
-						DWORD len = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
+						DWORD t_len = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
 								FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, dwError,
 								    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), f, left, NULL);
-						f += len, left -= len;
+						f += t_len, left -= t_len;
 						++fmt;
 						continue;
 					}
@@ -310,7 +311,7 @@ vxsyslog(int pri, const char *fmt, va_list ap, const char *suffix)
 	}
 
 	len = hdrlen + msglen;
-	assert(len <= (sizeof(message) - NLCR));
+	assert(len <= (int)(sizeof(message) - NLCR));
 	if (suffix && *suffix) {
 		int suflen;
 
