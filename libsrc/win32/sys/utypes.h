@@ -26,6 +26,7 @@
  * ==end==
  */
 
+#include <sys/types.h>
 #include <stdint.h>
 #include <assert.h>
 
@@ -36,7 +37,10 @@ typedef unsigned short u_short;
 typedef unsigned int u_int;
 typedef unsigned long u_long;
 
-typedef int ssize_t;
+#if !defined(_SSIZE_T_DEFINED_)
+#define _SSIZE_T_DEFINED_
+typedef signed ssize_t;
+#endif
 
 typedef uint8_t u_int8_t;
 typedef uint16_t u_int16_t;
@@ -47,12 +51,18 @@ typedef struct {
 	uint32_t __bits[4];
 } sigset_t;
 
+#if defined(__WATCOMC__)
+typedef unsigned nfds_t;
+#else
 typedef size_t nfds_t;
+#endif
 
 typedef char *caddr_t;
 
+#if defined(_MSC_VER)
 typedef int gid_t;
 typedef int uid_t;
 typedef int pid_t;
+#endif
 
 /*end*/

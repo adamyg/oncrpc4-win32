@@ -65,11 +65,13 @@ LIBRPC_API int rpc_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *e
 
 LIBRPC_API int rpc_getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen, char *serv, socklen_t servlen, int flags);
 
+LIBRPC_API const char *rpc_gai_strerror(int ecode);
+
 __END_DECLS
 
-#define INET6                                   /* enable AF_INET6 support */
+#define INET6					/* enable AF_INET6 support */
 #if !defined(IPV6PORT_RESERVED)
-#define	IPV6PORT_RESERVED 1024
+#define IPV6PORT_RESERVED 1024
 #endif
 
 #if (defined(LIBRPC_LIBRARY) || defined(LIBRPC_SOURCE)) && !defined(LIBRPC_NO_SOCKET_MAPPINGS)
@@ -80,6 +82,8 @@ __END_DECLS
 
 #undef strerror
 #define strerror(a__)				wsastrerror(a__)
+#undef gai_strerror
+#define gai_strerror(a__)			rpc_gai_strerror(a__)
 
 #undef socket
 #define socket(a__, b__, c__)			rpc_socket(a__, b__, c__)

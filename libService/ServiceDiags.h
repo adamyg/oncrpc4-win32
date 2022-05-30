@@ -28,7 +28,14 @@
  *  ==end==
  */
 
-#include <cstdarg>
+#include <stddef.h>
+#include <stdarg.h>
+
+#if defined(__WATCOMC__)
+#define VA_LIST_ARG va_list
+#else
+#define VA_LIST_ARG va_list&
+#endif
 
 #include "../libNTService/NTServiceIIO.h"
 
@@ -43,7 +50,8 @@ public:
 
                 static void setlogtid(bool value);
                 static void setlogms(bool value);
-                static void print(Logger &logger, enum loglevel type, const char *fmt, va_list *ap = 0);
+                static void print(Logger &logger, enum loglevel type, const char *fmt);
+                static void printv(Logger &logger, enum loglevel type, const char *fmt, VA_LIST_ARG ap);
                 static void push(Logger &logger, enum loglevel type, const char *buffer, size_t buflen);
 
         private:
@@ -143,9 +151,9 @@ public:
                         }
 
                 private:
-                        void fprint(enum Adapter::loglevel type, const char *fmt, va_list &ap)
+                        void fprint(enum Adapter::loglevel type, const char *fmt, VA_LIST_ARG ap)
                         {
-                                Adapter::print(logger_, type, fmt, &ap);
+                                Adapter::printv(logger_, type, fmt, ap);
                         }
 
                         void sprint(enum Adapter::loglevel type, const char *msg)

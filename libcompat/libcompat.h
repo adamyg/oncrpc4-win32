@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LIBCOMPACT_H_INCLUDED
 #define LIBCOMPACT_H_INCLUDED
 //
@@ -17,6 +18,7 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 __BEGIN_DECLS
 
@@ -209,6 +211,13 @@ extern int pidfile(const char *appname);
 #define HAVE_PIDFILE
 #endif
 #endif /*HAVE_PIDFILE*/
+
+#if !defined(HAVE_TIMEGM)       /*unistd.h*/
+extern time_t timegm(struct tm *tm);
+#if !defined(LIBCOMPAT_SOURCE)
+#define HAVE_TIMEGM
+#endif
+#endif /*HAVE_TIMEGM*/
 
 extern char *xmktemp(char *path, char *result, size_t length);
 

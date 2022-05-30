@@ -65,6 +65,7 @@ __RCSID("$NetBSD: rpc_main.c,v 1.44 2015/09/20 16:57:13 kamil Exp $");
 #if !defined(_WIN32)
 #include <unistd.h>
 #else
+#include <limits.h>
 #include <process.h>
 #include <fcntl.h>
 #include <io.h>
@@ -205,7 +206,7 @@ main(int argc, char *argv[])
 					CPP = strdup(t_buffer);
 				}
 			}
-                }
+		}
 #else
 		CPP = "/usr/bin/cpp";
 		if (access(CPP, X_OK))
@@ -284,6 +285,7 @@ main(int argc, char *argv[])
 	docleanup = 0;
 	exit(nonfatalerrors);
 	/* NOTREACHED */
+	return nonfatalerrors;
 }
 
 /*
@@ -369,11 +371,22 @@ open_input(const char *infile, const char *define)
 #define STDOUT_FILENO   1
 		int old_stdout;
 
+#if defined(__WATCOMC__) && (__WATCOMC__ < 1300) /*OWC2.0*/
+#define _P_WAIT P_WAIT
+#define _spawnvp spawnvp
+#endif
+
 		_pipe(pd, 0xffff, _O_TEXT);
 		old_stdout = dup(STDOUT_FILENO);
 		(void) dup2(pd[1], STDOUT_FILENO);
 
-		if (_spawnlp(_P_WAIT, CPP, CPP, CPPFLAGS, define, infile, NULL) < 0) {
+		putarg(0, CPP);
+		putarg(1, CPPFLAGS);
+		addarg(define);
+		addarg(infile);
+		addarg(NULL);
+
+		if (_spawnvp(P_WAIT, CPP, arglist)) {
 			err(EXIT_FAILURE, "C preprocessor failed [%s %s %s %s]",
 				CPP, CPPFLAGS, define, infilename);
                 }
@@ -386,7 +399,7 @@ open_input(const char *infile, const char *define)
 	}
 
 #elif defined(__MSDOS__)
-#define	DOSCPP	"\\prog\\bc31\\bin\\cpp.exe"
+#define DOSCPP "\\prog\\bc31\\bin\\cpp.exe"
 	{
 		int     retval;
 		char    drive[MAXDRIVE], dir[MAXDIR], name[MAXFILE], ext[MAXEXT];

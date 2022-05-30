@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.pl,v 1.1 2022/05/15 07:04:06 cvsuser Exp $
+# $Id: makelib.pl,v 1.5 2022/05/22 14:05:28 cvsuser Exp $
 # Makefile generation under WIN32 (MSVC/WATCOMC/MINGW) and DJGPP.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
@@ -468,6 +468,7 @@ my %x_environment   = (
                 #   -d2i        C++ only; d2 and debug inlines.
                 # -hc       Generate Codeview debugging information.
                 #   or -hw  Generate Watcomc debugging information.
+                #   or -hd  Dwarf debugging information (perferred format).
                 # -db       Generate browsing information (.mbr).
                 # -o..      Optimization(s)
                 #   f           -> generate traceable stack frames as needed
@@ -501,20 +502,20 @@ my %x_environment   = (
                 #
             CFLAGS          => '-q -6r -j -ei -db -zlf -bt=nt -bm -br -aa -sg',
             CXXFLAGS        => '-q -6r -j -ei -db -zlf -bt=nt -bm -br -cc++ -xs -xr',
-            CDEBUG          => '-d2 -hw -of+ ',
-            CXXDEBUG        => '-d1 -hw -od',   #d2/d3 under hw generates invalid symbols
+            CDEBUG          => '-d2 -hd -of+ ',
+            CXXDEBUG        => '-d2 -hd -od',   #d2/d3 under hw generates invalid symbols
             CRELEASE        => '-ox -DNDEBUG',
             CWARN           => '-W3',
             CXXWARN         => '-W3',
             LDFLAGS         => '-q -6r -db -bt=nt -bm -br',
-            LDDEBUG         => '-d2 -hw',
+            LDDEBUG         => '-d2 -hd',
             LDRELEASE       => '',
             LDMAPFILE       => '-fm=$(MAPFILE)',
 
             # 7600.16385.1: Windows Driver Kit Version 7.1.0
             #   ==> http://www.microsoft.com/download/en/details.aspx?displaylang=en&id=11800
             MFCDIR          => '/tools/WinDDK/7600.16385.1',
-            MFCCFLAGS       => '-q -j -ei -6r -d2  -hw -db -ofr -zlf -bt=nt -bm -br -aa',
+            MFCCFLAGS       => '-q -j -ei -6r -d2  -hd -db -ofr -zlf -bt=nt -bm -br -aa',
             MFCCXXFLAGS     => '-q -j -ei -6r -d2i     -db -ofr -zlf -bt=nt -bm -br -xs -xr -cc++',
             MFCCOPT         => '',
             MFCCXXOPT       => '',
@@ -568,7 +569,7 @@ my %x_environment   = (
             LDMAPFILE       => '-fm=$(MAPFILE)',
 
             MFCDIR          => '/tools/WinDDK/7600.16385.1',
-            MFCCOPT         => '-q -j -ei -6r -d2  -hw -db -ofr -zlf -bt=nt -bm -br -aa',               #TODO
+            MFCCOPT         => '-q -j -ei -6r -d2  -hd -db -ofr -zlf -bt=nt -bm -br -aa',               #TODO
             MFCCXXOPT       => '-q -j -ei -6r -d2i     -db -ofr -zlf -bt=nt -bm -br -xs -xr -cc++',     #TODO
             MFCCINCLUDE     => '-I$(MFCDIR)/inc/atl71 -I$(MFCDIR)/inc/mfc42',
             MFCLIBS         => '/LIBPATH:$(MFCDIR)\lib\atl\i386 /LIBPATH:$(MFCDIR)\lib\mfc\i386'
@@ -599,6 +600,7 @@ my %x_environment   = (
                 #   -d2i        C++ only; d2 and debug inlines.
                 # -hc       Generate Codeview debugging information.
                 #   or -hw  Generate Watcomc debugging information.
+                #   or -hd  Dwarf debugging information.
                 # -db       Generate browsing information (.mbr).
                 # -o..      Optimization(s)
                 #   f           -> generate traceable stack frames as needed
@@ -631,19 +633,19 @@ my %x_environment   = (
                 #
             CFLAGS          => '-q -6r -j -ei -db -zlf -bt=nt -bm -br -aa -sg',
             CXXFLAGS        => '-q -6r -j -ei -db -zlf -bt=nt -bm -br -cc++ -xs -xr',
-            CDEBUG          => '-d2 -hw -of+ ',
-            CXXDEBUG        => '-d2i -hw -od',
+            CDEBUG          => '-d2 -hd -of+ ',
+            CXXDEBUG        => '-d2i -hd -od',
             CRELEASE        => '-ox -DNDEBUG',
             CWARN           => '-W3',
             CXXWARN         => '-W3',
             LDFLAGS         => '-q -6r -db -bt=nt -bm -br',
-            LDDEBUG         => '-d2 -hw',
+            LDDEBUG         => '-d2 -hd',
             LDRELEASE       => '',
             LDMAPFILE       => '-fm=$(MAPFILE)',
 
             # not-supported
             MFCDIR          => '/tools/WinDDK/7600.16385.1',
-            MFCCOPT         => '-q -j -ei -6r -d2  -hw -db -ofr -zlf -bt=nt -bm -br -aa',
+            MFCCOPT         => '-q -j -ei -6r -d2  -hd -db -ofr -zlf -bt=nt -bm -br -aa',
             MFCCXXOPT       => '-q -j -ei -6r -d2i     -db -ofr -zlf -bt=nt -bm -br -xs -xr -cc++',
             MFCCINCLUDE     => '-I$(MFCDIR)/inc/atl71 -I$(MFCDIR)/inc/mfc42',
             MFCLIBS         => '/LIBPATH:$(MFCDIR)\lib\atl\i386 /LIBPATH:$(MFCDIR)\lib\mfc\i386'
@@ -985,6 +987,7 @@ my @x_functions     = (
         'memccpy', '_memccpy',                  # bsd/msvc
         'index', 'rindex',                      # bsd
         'strcasecmp', '__strcasecmp', 'stricmp',
+        'strncasecmp', '__strncasecmp', 'strnicmp',
         'strtoul',
         'strnlen',
         'strerror',
@@ -993,6 +996,7 @@ my @x_functions     = (
         'strlcpy', 'strlcat',                   # bsd/linux
             'strsep', 'strnstr', 'strcasestr', 'strcasestr_l', 'strtonum',
         'strtof', 'strtold', 'strtoll',
+        'strtok_r',
         'strverscmp', '__strverscmp',
         'mkdtemp',                              # bsd/linux
         'getw', 'putw',

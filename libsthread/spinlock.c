@@ -27,6 +27,7 @@
 #include "sthread.h"
 #include "satomic.h"
 
+#include <errno.h>
 #include <assert.h>
 
 

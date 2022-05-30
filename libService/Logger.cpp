@@ -29,6 +29,7 @@
 #include <sys/time.h>
 
 #include "Logger.h"                             // public header
+#include "libcompat.h"
 
 #ifndef  WINDOWS_MEAN_AND_LEAN
 #define  WINDOWS_MEAN_AND_LEAN
@@ -77,7 +78,7 @@ opendir(const char *name)
         if (NULL != (dir = (DIR *)calloc(1, sizeof(DIR)))) {
                 char *p = dir->path, *out = p;
 
-                snprintf(p, sizeof(dir->path)-1, "%s\\*.*", name);
+                _snprintf(p, sizeof(dir->path)-1, "%s\\*.*", name);
                 while (*p) {
                         char c = *p++;
                         *out = ('/' == c ? '\\' : c); // convert slashes
@@ -145,7 +146,11 @@ public:
         {
                 close();
                 if (NULL != (fp_ = std::fopen(path, "at"))) {
+#if defined(__WATCOMC__) && (__WATCOMC__ >= 1300) /*OWC2.0*/
+                        struct stat sb = { 0 };
+#else
                         struct _stat sb = { 0 };
+#endif
 
                         filename_ = path;
                         (void) _stat(path, &sb);
@@ -278,8 +283,8 @@ public:
                 struct std::tm *tm = std::gmtime(&now); // GMT/MTSafe
                 char timestamp[32];
 
-                (void) _snprintf(timestamp, sizeof(timestamp), "_%04u%02u%02u_%02u%02u%02u.log",
-                            tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+                _snprintf(timestamp, sizeof(timestamp), "_%04u%02u%02u_%02u%02u%02u.log",
+                                tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
                 timestamp[sizeof(timestamp) - 1] = 0;
 
                 if (name.length() > 4) {        // remove trailing ".log"; if any
@@ -314,11 +319,7 @@ public:
                 tm.tm_year -= 1900;             // Year (current year minus 1900).
                 tm.tm_mon -= 1;                 // Month (0 - 11; January = 0).
 
-#if defined(_WIN32)
-                return _mkgmtime(&tm);
-#else
                 return timegm(&tm);
-#endif
         }
 
         static int purge_logs(const std::string &basename, const time_t now, unsigned period)
@@ -356,7 +357,7 @@ public:
                                                         if (timestamp > 0 && timestamp < expired) {
                                                                 strcpy(fullname + dir.length() + 1, name);
                                                                 LOGGER_TRACE(std::cout << "LOG: purged volume <" << filename << ">\n";)
-                                                                _unlink(fullname);
+                                                                remove(fullname);
                                                                 ++ret;
                                                         }
                                                 }
@@ -1048,7 +1049,7 @@ Logger::parse_size_limit(const char *limit, unsigned &result)
 
                 if ('.' == spec) {              // x.x
                         char *end2 = 0;
-#if defined(__WATCOMC__) //XXX: strtof() linkage issues
+#if defined(__WATCOMC__) // strtof() linkage issues
                         bits = (float)std::strtod(end, &end2);
 #else
                         bits = std::strtof(end, &end2);
@@ -1112,7 +1113,7 @@ Logger::parse_time_limit(const char *limit, unsigned &result)
 
                 if ('.' == spec) {              // x.x
                     char *end2 = 0;
-#if defined(__WATCOMC__) //XXX: strtof() linkage issues
+#if defined(__WATCOMC__) // strtof() linkage issues
                         bits = (float)std::strtod(end, &end2);
 #else
                         bits = std::strtof(end, &end2);

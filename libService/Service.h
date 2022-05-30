@@ -28,6 +28,11 @@
  *  ==end==
  */
 
+#if defined(__WATCOMC__)
+#undef min
+#undef max
+#endif
+
 #include "../../libNTService/NTService.h"
 
 #include "SimpleConfig.h"

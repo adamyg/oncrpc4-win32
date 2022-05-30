@@ -6,6 +6,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#if defined(HAVE_CONFIG_H)
+#include "../liboncrpc/w32config.h"
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -13,6 +17,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
 #include "rpc_win32.h"
@@ -113,6 +118,7 @@ asprintf(char **str, const char *fmt, ...)
 }
 
 
+#if !defined(HAVE_STRLCAT)
 size_t
 strlcat(char *dst, const char *src, size_t siz)
 {
@@ -138,8 +144,10 @@ strlcat(char *dst, const char *src, size_t siz)
 
 	return(dlen + (s - src));
 }
+#endif /*HAVE_STRLCAT*/
 
 
+#if !defined(HAVE_STRLCPY)
 size_t
 strlcpy(char *dst, const char *src, size_t siz)
 {
@@ -162,5 +170,6 @@ strlcpy(char *dst, const char *src, size_t siz)
 
 	return(s - src - 1);
 }
+#endif /*HAVE_STRLCPY*/
 
 /*end*/

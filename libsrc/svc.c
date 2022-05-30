@@ -662,8 +662,9 @@ svc_getreqset2(fd_set *readfds, int maxsize)
 {
 
 #if defined(_WIN32)
+        unsigned i;
 	_DIAGASSERT(readfds != NULL);
-        for (unsigned i = 0; i < readfds->fd_count; ++i) { 
+        for (i = 0; i < readfds->fd_count; ++i) { 
 		svc_getreq_common(readfds->fd_array[i]);
         }
 

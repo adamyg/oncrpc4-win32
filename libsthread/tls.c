@@ -46,14 +46,14 @@ static satomic_lock_t tlslock;
 int
 pthread_key_create(pthread_key_t *key, void (*destructor)(void *))
 {
-    int tls_idx = -1;
+    int idx, tls_idx = -1;
     DWORD t_key;
 
     if (! key) 
             return EINVAL;
 
     satomic_lock(&tlslock);
-    for (int idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
+    for (idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
         if (0 == tlskeys[idx].active) {
             tlskeys[idx].destructor = destructor;
             tlskeys[idx].active = 1;
@@ -120,9 +120,10 @@ int
 pthread_key_delete(pthread_key_t key)
 {
     unsigned found = 0;
+    int idx;
 
     satomic_lock(&tlslock);
-    for (unsigned idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
+    for (idx = 0; idx < PTHREAD_MAX_KEYS; ++idx) {
         if (tlskeys[idx].active) {
             if (key == tlskeys[idx].key) {
                 tlskeys[idx].key = 0;

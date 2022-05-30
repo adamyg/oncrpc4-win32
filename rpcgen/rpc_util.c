@@ -50,6 +50,8 @@ __RCSID("$NetBSD: rpc_util.c,v 1.18 2015/09/20 16:57:13 kamil Exp $");
 #include <stdarg.h>
 #if !defined(_WIN32)
 #include <unistd.h>
+#else
+#include <io.h>
 #endif
 #include <string.h>
 #if !defined(_WIN32)
@@ -273,7 +275,7 @@ pvname(const char *pname, const char *vnum)
 /*
  * print a useful (?) error message, and then die
  */
-#if !defined(_MSC_VER)
+#if !defined(_MSC_VER) && !defined(__WATCOMC__)
 __printflike(1, 2)
 #endif
 void error(const char *msg, ...)

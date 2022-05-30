@@ -194,7 +194,7 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
 
 typedef DWORD pthread_key_t;
 
-#define PTHREAD_MAX_KEYS 32
+#define PTHREAD_MAX_KEYS 64
 
 int pthread_key_create(pthread_key_t *key, void (*destr_function) (void *));
 int pthread_key_delete(pthread_key_t key);

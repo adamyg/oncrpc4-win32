@@ -30,9 +30,6 @@
 
 #include <sys/queue.h>
 
-//#if defined(_MSC_VER)
-//#include <msvc_system_error.hpp>
-//#endif
 #include <string>
 #include <memory>
 

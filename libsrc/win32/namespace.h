@@ -28,15 +28,7 @@
 
 #define INET6
 
-#if !defined(_CRT_NONSTDC_NO_DEPRECATE)
-/* disable deprecate warnings, strdup() */
-#define _CRT_NONSTDC_NO_DEPRECATE
-#endif
-
-#if !defined(_CRT_SECURE_NO_DEPRECATE)
-/* disable deprecate warnings, strncpy(), strncat(), strcpy(), getenv() */
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
+#include "rpc_config.h"
 
 #define WIN32_ENABLE(__x)   __x
 #define WIN32_DISABLE(__x)  /**/

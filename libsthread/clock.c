@@ -5,18 +5,18 @@
  *  All rights reserved.
  *
  *  This file is part of oncrpc4-win32.
- *  
+ *
  *  The applications are free software: you can redistribute it
  *  and/or modify it under the terms of the oncrpc4-win32 License.
- *  
+ *
  *  Redistributions of source code must retain the above copyright
  *  notice, and must be distributed with the license document above.
- *  
+ *
  *  Redistributions in binary form must reproduce the above copyright
  *  notice, and must include the license document above in
  *  the documentation and/or other materials provided with the
  *  distribution.
- *  
+ *
  *  This project is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -41,6 +41,34 @@
 #define ENOTSUP ENOSYS
 #endif
 
+#if defined(__WATCOMC__)
+#define  WIN32_LEAN_AND_MEAN
+#include <WinSock2.h>
+#include <Windows.h>
+#include <stdint.h>
+
+static int
+wc_gettimeofday(struct timeval *tp, struct timezone *tzp)
+{
+    // Magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
+    // until 00:00:00 January 1, 1970
+    static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+
+    SYSTEMTIME system_time;
+    FILETIME file_time;
+    uint64_t tm64;
+
+    GetSystemTime(&system_time);
+    SystemTimeToFileTime(&system_time, &file_time);
+    tm64 = ((uint64_t)file_time.dwLowDateTime);
+    tm64 += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tp->tv_sec = (long) ((tm64 - EPOCH) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+    return 0;
+}
+#endif //__WATCOMC__
+
 
 static int
 clock_gettime_realtime(struct timespec *time_spec)
@@ -48,23 +76,27 @@ clock_gettime_realtime(struct timespec *time_spec)
 #if defined(HAVE_TIMESPEC_GET)
     timespec_get(time_spec, TIME_UTC);
 
-#elif defined(_MSC_VER) || defined(__WATCOMC__)
+#elif defined(_MSC_VER)
     struct __timeb64 ftime;
-
     _ftime64(&ftime);
     time_spec->tv_sec = ftime.time + lt.timezone;
     time_spec->tv_usec = ftime.millitm * 1000000;
 
+#elif defined(__WATCOMC__)
+    struct timeval tv;
+    wc_gettimeofday(&tv, NULL);
+    TIMEVAL_TO_TIMESPEC(&tv, time_spec);
+
 #else
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    TIMEVAL_TO_TIMESPEC(&tv, timespec);
+    TIMEVAL_TO_TIMESPEC(&tv, time_spec);
 #endif
     return 0;
 }
 
 
-static int 
+static int
 clock_gettime_monotonic(struct timespec *time_spec)
 {
     static LARGE_INTEGER ticksPerSec = {0};

@@ -113,7 +113,7 @@ int isvectordef(const char *, relation);
 char *locase(const char *);
 void pvname_svc(const char *, const char *);
 void pvname(const char *, const char *);
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 void error(const char *, ...);
 #else
 __dead __printflike(1, 2) void error(const char *, ...);

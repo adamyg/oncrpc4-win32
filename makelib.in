@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.in,v 1.2 2022/05/16 02:39:39 cvsuser Exp $
+# $Id: makelib.in,v 1.3 2022/05/21 06:57:10 cvsuser Exp $
 # -*- mode: perl; tabs: 8; indent-width: 4; -*-
 # makelib configuration
 #
@@ -90,6 +90,7 @@ Configure()
                 add_define('_CRT_SECURE_NO_WARNINGS');
                 add_define('_CRT_SECURE_NO_DEPRECATE');
                 add_define('_CRT_NONSTDC_NO_DEPRECATE');
+                add_cflag('-wd4996');
         }
 
         ################################################################################
@@ -100,6 +101,9 @@ Configure()
                 remove_define('WIN32');
                 add_define('HAVE_CONFIG_H');
                 add_define('_WIN32_WINNT=0x600');       # Windows SDK
+                add_define('__STDC_WANT_LIB_EXT1__');
+
+                set_winsdk('C:/Program Files (x86)/Windows Kits/8.0/Lib/win8/um/x86');
         }
 }
 

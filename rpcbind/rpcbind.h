@@ -47,6 +47,14 @@
 #endif
 #include <rpc/rpcb_prot.h>
 
+#if defined(_WIN32)
+#include <libcompat.h>
+#if defined(__WATCOMC__)
+#include <strings.h>            /* strcasecmp */
+#endif
+#endif
+      
+
 /*
  * Stuff for the rmtcall service
  */
