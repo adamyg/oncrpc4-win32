@@ -31,8 +31,10 @@
 #include <stddef.h>         /* size_t */
 #include <limits.h>         /* INT_MAX */
 
-#define IOV_MAX             64
+#if !defined(__MINGW32__)
 #define SSIZE_MAX           INT_MAX
+#endif
+#define IOV_MAX             64
 
 __BEGIN_DECLS
 

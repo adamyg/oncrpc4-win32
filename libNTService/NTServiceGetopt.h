@@ -351,4 +351,4 @@ private:
 
 }   //namspace NTService
 
-#endif  NTSERVICEGETOPT_HPP_INCLUDED
+#endif  //NTSERVICEGETOPT_HPP_INCLUDED

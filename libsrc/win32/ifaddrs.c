@@ -24,12 +24,9 @@
  * ==end==
  */
 
-#if !defined(_CRT_SECURE_NO_WARNINGS)
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+#include "namespace.h"
 
 #include <sys/utypes.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -39,7 +36,26 @@
 #include "rpc_win32.h"
 #include "ifaddrs.h"
 
+#if defined(__MINGW32__)
+#if defined(__MINGW64__)
+#include <Iphlpapi.h>
+#else
+#include <iptypes.h>  /*>=0x601*/
+#include <ipifcons.h>
+typedef struct {
+    uint64_t Value;
+    struct {
+        uint64_t Reserved :24;
+        uint64_t NetLuidIndex :24;
+        uint64_t IfType :16;
+    } Info;
+} NET_LUID;
+WINAPI ULONG GetAdaptersAddresses(ULONG Family, ULONG Flags, PVOID Reserved, PIP_ADAPTER_ADDRESSES AdapterAddresses, PULONG SizePointer);
+#endif
+#else   /*!__MINGW32__*/
+#include <Iphlpapi.h>
 #pragma comment(lib, "Iphlpapi.lib")
+#endif  /*__MINGW32__*/
 
 typedef DWORD (WINAPI *ConvertInterfaceGuidToLuid_t)(const GUID *, NET_LUID *);
 typedef DWORD (WINAPI *ConvertInterfaceLuidToNameA_t)(const NET_LUID *, char *, size_t);

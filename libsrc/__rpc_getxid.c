@@ -35,10 +35,9 @@
 __RCSID("$NetBSD: __rpc_getxid.c,v 1.3 2003/09/13 21:27:46 itojun Exp $");
 #endif
 
-#include <sys/types.h>
-
 #include "namespace.h"
 
+#include <sys/types.h>
 #include <stdlib.h>
 #include <randomid.h>
 #include <rpc/rpc.h>

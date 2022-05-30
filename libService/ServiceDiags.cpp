@@ -89,7 +89,7 @@ parse_strerror(char *fmt_copy, unsigned fmt_size, const char *fmt)
 
         const int saved_errno = errno;
 
-        for (const char *p = std::strchr(fmt, '%'); p;) {
+        for (const char *p = strchr(fmt, '%'); p;) {
                 if (p[1] == 'm' || p[1] == 'M') {
                         int left = fmt_size - 1 /*nul*/;
                         char *f, ch;
@@ -99,7 +99,7 @@ parse_strerror(char *fmt_copy, unsigned fmt_size, const char *fmt)
                                         // strerror
                                         if ('m' == *fmt && saved_errno < 256) {
                                                 // system error
-                                                int len = snprintf(f, left, "%s", std::strerror(saved_errno));
+                                                int len = snprintf(f, left, "%s", strerror(saved_errno));
                                                 if (len < 0 || len >= left) len = left;
                                                 f += len, left -= len;
                                                 ++fmt;
@@ -123,7 +123,7 @@ parse_strerror(char *fmt_copy, unsigned fmt_size, const char *fmt)
                         fmt = fmt_copy;
                         break;                  // done
                 }
-                p = std::strchr((char *)(p + 1), '%');
+                p = strchr((char *)(p + 1), '%');
         }
         return fmt;
 }
@@ -143,7 +143,7 @@ ServiceDiags::Adapter::printv(Logger &logger, enum loglevel type, const char *fm
 
         if ('%' == fmt[0] && 's' == fmt[1] && 0 == fmt[2]) {
                 // log( "%s", buffer )
-                const char *buffer = va_arg(*ap, const char *);
+                const char *buffer = va_arg(ap, const char *);
                 fmt = buffer ? buffer : "";
                 mlen = strlen(fmt);
         } else {

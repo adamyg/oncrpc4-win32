@@ -212,8 +212,8 @@ main(int argc, const char **argv)
 			int ret = NTSERVICE_CMD_UNKNOWN;
 
 			if (0 == _stricmp(verb, "config")) {
-				CNTServiceConfig service(service_name, service.GetCompany(), diags);
-				ret = service.ExecuteCommand(argc - 1, argv + 1);
+				CNTServiceConfig service_config(service_name, service.GetCompany(), diags);
+				ret = service_config.ExecuteCommand(argc - 1, argv + 1);
 
 			} else if (0 == _stricmp(verb, "control")) {
 				CNTServiceControl service(service_name, diags);

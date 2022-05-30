@@ -1,5 +1,5 @@
 //#include <edidentifier.h>
-//__CIDENT_RCSID(NTServiceControl_cpp, "$Id: NTServiceControl.cpp,v 1.1 2022/05/15 07:04:07 cvsuser Exp $")
+//__CIDENT_RCSID(NTServiceControl_cpp, "$Id: NTServiceControl.cpp,v 1.2 2022/05/30 04:38:21 cvsuser Exp $")
 
 /* -*- mode: c; indent-width: 8; -*- */
 /*
@@ -30,13 +30,19 @@
 
 #include <Windows.h>
 #include <tchar.h>
-#include <strsafe.h>
 #include <aclapi.h>
-
-#pragma comment(lib, "advapi32.lib")
 
 #include "NTServiceControl.h"                   // public interface
 #include "NTService.h"
+
+#if defined(__MINGW32__)
+#include <strings.h>
+#define _strnicmp(__a,__b,__c) strncasecmp(__a,__b,__c)
+#define _stricmp(__a,__b) strcasecmp(__a,__b)
+#else
+#include <strsafe.h>
+#pragma comment(lib, "advapi32.lib")
+#endif
 
 static bool StopDependentServices(SC_HANDLE schSCManager, SC_HANDLE schService);
 
@@ -380,6 +386,7 @@ void CNTServiceControl::UpdateDacl()
         DWORD                dwError        = 0;
         DWORD                dwSize         = 0;
         DWORD                dwBytesNeeded  = 0;
+        char guest[] = "GUEST";
 
         // Get a handle to the SCM database.
 
@@ -411,7 +418,7 @@ void CNTServiceControl::UpdateDacl()
         // Get the current security descriptor.
 
         if (!::QueryServiceObjectSecurity(schService, DACL_SECURITY_INFORMATION,
-                        &psd,                   // using NULL does not work on all versions
+                        psd,                    // using NULL does not work on all versions
                         0, &dwBytesNeeded))
         {
                 if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER)
@@ -449,7 +456,7 @@ void CNTServiceControl::UpdateDacl()
 
         // Build the ACE.
 
-        ::BuildExplicitAccessWithName(&ea, TEXT("GUEST"),
+        ::BuildExplicitAccessWithNameA(&ea, guest,
                     SERVICE_START | SERVICE_STOP | READ_CONTROL | DELETE, SET_ACCESS, NO_INHERITANCE);
 
         dwError = ::SetEntriesInAcl(1, &ea, pacl, &pNewAcl);

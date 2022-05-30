@@ -30,11 +30,36 @@
 #include <sys/utypes.h>
 
 __BEGIN_DECLS
+
+#if defined(__MINGW32__)                /* missing definitions */
+
+#if !defined(POLLIN)
+#define POLLRDNORM  0x0100
+#define POLLRDBAND  0x0200
+#define POLLIN      (POLLRDNORM | POLLRDBAND)
+#define POLLPRI     0x0400
+#define POLLWRNORM  0x0010
+#define POLLOUT     (POLLWRNORM)
+#define POLLWRBAND  0x0020
+#define POLLERR     0x0001
+#define POLLHUP     0x0002
+#define POLLNVAL    0x0004
+
+typedef struct pollfd {
+    SOCKET fd;
+    SHORT  events;
+    SHORT  revents;
+} WSAPOLLFD, *PWSAPOLLFD, *LPWSAPOLLFD;
+
+int WSAAPI WSAPoll(LPWSAPOLLFD fdArray, ULONG fds, INT timeout);
+#endif /*POLLIN*/
+#endif /*__MINGW32__*/
+
 LIBRPC_API int rpc_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 LIBRPC_API int rpc_pollts(struct pollfd * fds, nfds_t nfds, const struct timespec * ts, const sigset_t *sigmask);
 __END_DECLS
 
-#define poll(a__, b__, c__)		rpc_poll(a__, b__, c__)
-#define pollts(a__, b__, c__, d__)	rpc_pollts(a__, b__, c__, d__)
+#define poll(a__, b__, c__)	        rpc_poll(a__, b__, c__)
+#define pollts(a__, b__, c__, d__)      rpc_pollts(a__, b__, c__, d__)
 
 /*end*/

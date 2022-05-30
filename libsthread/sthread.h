@@ -14,18 +14,18 @@
  *  All rights reserved.
  *
  *  This file is part of oncrpc4-win32.
- *  
+ *
  *  The applications are free software: you can redistribute it
  *  and/or modify it under the terms of the oncrpc4-win32 License.
- *  
+ *
  *  Redistributions of source code must retain the above copyright
  *  notice, and must be distributed with the license document above.
- *  
+ *
  *  Redistributions in binary form must reproduce the above copyright
  *  notice, and must include the license document above in
  *  the documentation and/or other materials provided with the
  *  distribution.
- *  
+ *
  *  This project is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -34,9 +34,9 @@
  */
 
 #if defined(_WIN32)
-#if defined(LIBSTHREAD_SOURCE) && !defined(_WIN32_WINNT)
+#if !defined(_WIN32_WINNT)
 #define _WIN32_WINNT 0x0600
-#endif /*LIBSTHREAD_SOURCE*/
+#endif
 #include "rpc_win32.h"
 #endif
 
@@ -173,6 +173,17 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
 /*
  *  once
  */
+#if defined(__MINGW32__) && !defined(INIT_ONCE_STATIC_INIT)
+#define RTL_RUN_ONCE_INIT {0}
+typedef union _RTL_RUN_ONCE {
+    PVOID Ptr;
+} RTL_RUN_ONCE, *PRTL_RUN_ONCE;
+#define INIT_ONCE_STATIC_INIT RTL_RUN_ONCE_INIT
+typedef RTL_RUN_ONCE *PINIT_ONCE;
+typedef RTL_RUN_ONCE INIT_ONCE;
+typedef WINBOOL (WINAPI *PINIT_ONCE_FN) (PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context);
+WINBASEAPI WINBOOL WINAPI InitOnceExecuteOnce (PINIT_ONCE InitOnce, PINIT_ONCE_FN InitFn, PVOID Parameter, LPVOID *Context);
+#endif
 
 typedef struct pthread_once_tag {
     INIT_ONCE init_once;
@@ -227,6 +238,7 @@ int pthread_spin_unlock(pthread_spinlock_t *lock);
  *  support
  */
 
+#if !defined(__MINGW32__)
 #if !defined(CLOCK_REALTIME)
 #define CLOCK_REALTIME 0
     //System-wide realtime clock. Setting this clock requires appropriate privileges.
@@ -234,10 +246,13 @@ int pthread_spin_unlock(pthread_spinlock_t *lock);
     //Clock that cannot be set and represents monotonic time since some unspecified starting point.
 extern int clock_gettime(int clockid, struct timespec *time_spec);
 #endif
+#endif
 
+#if !defined(__MINGW32__)
 #if !defined(USECONDS_T)
 #define USECONDS_T
 typedef long useconds_t;
+#endif
 #endif
 
 int usleep(useconds_t useconds);

@@ -25,21 +25,12 @@
  * See the Licence for details.
  * ==end==
  */
- 
+
 /*
  *  WinSock/Windows definitions
- */ 
+ */
 
 #include "rpc_config.h"
-
-#if !defined(HAVE_WINSOCK2_H_INCLUDED)
-#define HAVE_WINSOCK2_H_INCLUDED
-#if defined(gethostname)
-#undef gethostname                              /* unistd.h name mangling */
-#endif
-#if defined(u_char)
-#undef u_char                                   /* namespace issues (_BSD_SOURCE) */
-#endif
 
 #if defined(__WATCOMC__)
 #if !defined(NTDDI_VERSION)
@@ -47,15 +38,37 @@
 #endif
 #endif
 
-#include <winsock2.h>
-#include <ws2tcpip.h>                           /* getaddrinfo() */
-#include <iphlpapi.h>                           /* if_nametoindex */
-#if defined(__WATCOMC__)
-#include <ws2tcpip.h>                           /* inet_pton() .. */
+/* winsock and friends */
+
+struct netconfig;                               /* gcc, quiet struct warnings */
+
+#if !defined(HAVE_WINSOCK2_H_INCLUDED)
+#define HAVE_WINSOCK2_H_INCLUDED
+#if !defined(_WINSOCK2_H)                       /* MINGW32 guard */
+
+#undef gethostname                              /* unistd.h name mangling */
+#if defined(u_char)
+#undef u_char                                   /* namespace issues (_BSD_SOURCE) */
 #endif
+
+#if defined(__MINGW32__) && defined(SLIST_ENTRY)
+#pragma push_macro("SLIST_ENTRY")               /* <sys/queue.h> */
+#undef SLIST_ENTRY
+#include <winsock2.h>
+#pragma pop_macro("SLIST_ENTRY")
+#else
+#include <winsock2.h>
+#undef SLIST_ENTRY
+#endif
+
+#include <ws2tcpip.h>                           /* getaddrinfo() */
 #include <mswsock.h>                            /* IOCP */
+
+#endif /*_WINSOCK2_H*/
 #endif /*HAVE_WINSOCK2_H_INCLUDED*/
-                                     
+
+/* windows.h*/
+
 #if !defined(HAVE_WINDOWS_H_INCLUDED)
 #define HAVE_WINDOWS_H_INCLUDED
 #ifndef WINDOWS_NOT_MEAN_AND_LEAN
@@ -64,35 +77,32 @@
 #include <windows.h>
 #endif /*HAVE_WINDOWS_H_INCLUDED*/
 
-#if defined(__WATCOMC__)                        /* missing definitions */
-ULONG WINAPI if_nametoindex(PCSTR InterfaceName);
-#endif
+/* _countof */
 
-/*
- *  WATCOMC MSVC compat tweaks
- */ 
- 
-#if defined(__WATCOMC__)
-
-#if !defined(_countof)
+#if !defined(_MSC_VER) && !defined(_countof)
 #define _countof(_Array) (sizeof(_Array) / sizeof(_Array[0]))
 #endif
 
+
+/*
+ *  MINGW tweaks
+ */
+
+#if defined(__MINGW32__)
 #include <errno.h>                              /* standard definitions */
 
-#if !defined(HAVE_TIMESPEC)
-#define HAVE_TIMESPEC
-#endif
-#if !defined(_TIMESPEC_DEFINED) && (__WATCOMC__ < 1300)
-#define _TIMESPEC_DEFINED                       /* OWC1.9=1290, OWC2.0=1300 */
-struct timespec {
-        time_t tv_sec;
-        long tv_nsec;
-};
-#else
-#include <signal.h>
-#endif  /*TIMESPEC_STRUCT_T*/
+#ifndef _CRT_NO_POSIX_ERROR_CODES               /* POSIX Supplement */
+#define EWOULDBLOCK     140
+#endif /*_CRT_NO_POSIX_ERROR_CODES*/
 
+#endif /*__MINGW32__*/
+
+/*
+ *  WATCOMC compat tweaks
+ */
+
+#if defined(__WATCOMC__)
+#include <errno.h>                              /* standard definitions */
 extern int _getmaxstdio(void);
 
 #ifndef _CRT_NO_POSIX_ERROR_CODES               /* POSIX Supplement */
@@ -137,8 +147,9 @@ extern int _getmaxstdio(void);
 #define ETIMEDOUT       138
     //#define ETXTBSY   139
 #define EWOULDBLOCK     140
-#endif // _CRT_NO_POSIX_ERROR_CODES
+#endif /*_CRT_NO_POSIX_ERROR_CODES*/
 
-#endif //__WATCOMC__
+#endif /*__WATCOMC__*/
 
 /*end*/
+

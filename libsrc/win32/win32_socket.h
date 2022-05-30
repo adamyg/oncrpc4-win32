@@ -46,8 +46,8 @@ LIBRPC_API int rpc_connect(int sockfd, const struct sockaddr *addr, socklen_t ad
 LIBRPC_API int rpc_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 LIBRPC_API int rpc_listen(int sockfd, int backlog);
 LIBRPC_API int rpc_accept(int sockfd, struct sockaddr *addr, int *addrlen);
-LIBRPC_API int rpc_recvfrom(int sockfd, void *buffer, size_t length, int flags, struct sockaddr *address, socklen_t *address_len);
-LIBRPC_API int rpc_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
+LIBRPC_API ssize_t rpc_recvfrom(int sockfd, void *buffer, size_t length, int flags, struct sockaddr *address, socklen_t *address_len);
+LIBRPC_API ssize_t rpc_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
 
 LIBRPC_API int rpc_open(const char *pathname, int flags, int mode);
 LIBRPC_API int rpc_ioctlsocket(int sockfd, long cmd, u_long *argp);

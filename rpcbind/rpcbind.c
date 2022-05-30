@@ -483,12 +483,17 @@ init_transport(struct netconfig *nconf)
 						continue;
 					}
 				}
+
+#if !defined(IPV6_V6ONLY) /* IPv6 socket options */
+#define IPV6_V6ONLY		27
+#endif
+
 				if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof on) < 0) {
 					syslog(LOG_ERR,
 					    "can't set v6-only binding for "
 					    "ipv6 socket: %m");
 					continue;
-				    }
+				}
 				break;
 			default:
 				break;

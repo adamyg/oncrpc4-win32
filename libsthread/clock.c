@@ -72,6 +72,7 @@ xgettimeofday(struct timeval *tp, struct timezone *tzp)
 #endif //__WATCOMC__
 
 
+#if !defined(__MINGW32__)
 static int
 clock_gettime_realtime(struct timespec *time_spec)
 {
@@ -134,6 +135,7 @@ clock_gettime(int clockid, struct timespec *time_spec)
     errno = ENOTSUP;
     return -1;
 }
+#endif  /*__MINGW32__*/
 
 
 int

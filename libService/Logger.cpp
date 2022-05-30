@@ -38,6 +38,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <climits>
 #include <cassert>
 #include <cctype>
@@ -132,7 +133,7 @@ class FileStream {
 
 public:
         FileStream(const char *path = 0) :
-                fp_(0), lasterror_(0), created_(std::time(NULL)), size_(0), blocks_(0)
+                fp_(0), created_(std::time(NULL)), size_(0), blocks_(0), lasterror_(0)
         {
                 if (path) open(path);
         }
@@ -239,7 +240,8 @@ public:
                         strncpy(t_directoryname, (len ? t_fullpathname : basename.c_str()), sizeof(t_directoryname));
                         t_directoryname[sizeof(t_directoryname) - 1] = 0;
 
-                        char *p1 = strrchr(t_directoryname, '/'), *p2 = strrchr(t_directoryname, '\\');
+                        char *p1 = strrchr(t_directoryname, '/');
+                        char *p2 = strrchr(t_directoryname, '\\');
                         if (p1 || p2) {         // remove trailing name.
                                 (p2 > p1 ? p2 : p1)[1] = 0;
 
@@ -372,7 +374,7 @@ public:
 private:
         int write(const char *buffer, size_t buflen)
         {
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || defined(__MINGW32__)
                 return std::fwrite(buffer, 1, buflen, fp_);
 #else
                 return _fwrite_nolock(buffer, 1, buflen, fp_);
@@ -584,7 +586,7 @@ public:
                 }
         }
 
-        Logger::BufferCursor *LoggerImpl::allocate(size_t buflen)
+        Logger::BufferCursor *allocate(size_t buflen)
         {
                 BufferCursor *cursor;
 

@@ -45,6 +45,7 @@ __RCSID("$NetBSD: xdr_sizeof.c,v 1.5 2013/03/11 20:19:30 tron Exp $");
 #endif
 
 #include "namespace.h"
+
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <sys/types.h>

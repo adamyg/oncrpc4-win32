@@ -275,7 +275,7 @@ pvname(const char *pname, const char *vnum)
 /*
  * print a useful (?) error message, and then die
  */
-#if !defined(_MSC_VER) && !defined(__WATCOMC__)
+#if !defined(_MSC_VER) && !defined(__WATCOMC__) && !defined(__MINGW32__)
 __printflike(1, 2)
 #endif
 void error(const char *msg, ...)
