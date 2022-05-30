@@ -29,4 +29,4 @@ $ ./rpcinfo.exe
 
    * VS2015+
    * OpenWatcom 1.9+
-
+   * Mingw64
