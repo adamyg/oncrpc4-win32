@@ -38,19 +38,22 @@ jobs:
     - name: Generating Makefiles
       shell: cmd
       run: |
-        if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=d:\msys64\mingw64\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
         @set PERL=c:/Strawberry/perl/bin/perl
         c:/Strawberry/perl/bin/perl makelib.pl --perlpath=c:/Strawberry/perl/bin --busybox=./win32/busybox --wget=./win32/wget "${{ matrix.config.toolchain }}"
+        dir c:\msys64
+        dir c:\msys64\mingw32\bin
+        dir c:\msys64\mingw64\bin
 
     - name: Compiling
       shell: cmd
       run: |
-        if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=d:\msys64\mingw64\bin;%PATH%
+        @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
         @set PERL=c:/Strawberry/perl/bin/perl
         .\win32\gmake-42 release
 
     - name: Package
       uses: actions/upload-artifact@v2
       with:
-        name: package-"${{ matrix.config.toolchain }}"
-        path: ./bin."${{ matrix.config.toolversion }}"/release/*
+        name: package-${{ matrix.config.toolchain }}
+        path: ./bin.${{ matrix.config.toolversion }}/release/*
