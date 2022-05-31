@@ -38,14 +38,14 @@ int
 ServiceDiags::Syslog::hook(void *self, int op, int pri, const char *msg, size_t msglen)
 {
         static enum Adapter::loglevel levels[] = {
-                { Adapter::LLERROR   },  // 0 - LOG_EMERG
-                { Adapter::LLERROR   },  // 1 - LOG_ALERT
-                { Adapter::LLERROR   },  // 2 - LOG_CRIT
-                { Adapter::LLERROR   },  // 3 - LOG_ERR
-                { Adapter::LLWARNING },  // 4 - LOG_WARNING
-                { Adapter::LLWARNING },  // 5 - LOG_NOTICE
-                { Adapter::LLINFO,   },  // 6 - LOG_INFO
-                { Adapter::LLDEBUG   }   // 7 - LOG_DEBUG
+                Adapter::LLERROR,    // 0 - LOG_EMERG
+                Adapter::LLERROR,    // 1 - LOG_ALERT
+                Adapter::LLERROR,    // 2 - LOG_CRIT
+                Adapter::LLERROR,    // 3 - LOG_ERR
+                Adapter::LLWARNING,  // 4 - LOG_WARNING
+                Adapter::LLWARNING,  // 5 - LOG_NOTICE
+                Adapter::LLINFO,     // 6 - LOG_INFO
+                Adapter::LLDEBUG     // 7 - LOG_DEBUG
                 };
 
         Logger &logger = *((Logger *)self);
