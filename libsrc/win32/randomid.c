@@ -30,7 +30,7 @@
 #include "randomid.h"
 
 #if defined(__MINGW32__)
-#if !defined(__MINGW64__)
+#if !defined(__MINGW64_VERSION_MAJOR)
 #include "mingw_bcrypt.h"
 #endif
 #else

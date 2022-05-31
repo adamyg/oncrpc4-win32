@@ -283,7 +283,11 @@ rpc_broadcast_exp(
 		int af;
 		int proto;
 		struct netconfig *nconf; /* Netconfig structure */
+#if defined(_WIN32)
+		socklen_t asize;	/* Size of the addr buf */
+#else
 		u_int asize;	/* Size of the addr buf */
+#endif
 		u_int dsize;	/* Size of the data buf */
 		struct sockaddr_storage raddr; /* Remote address */
 		broadlist_t nal;

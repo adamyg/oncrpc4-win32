@@ -64,4 +64,5 @@ extern SVCXPRT **__svc_xports;
 extern int __svc_maxrec;
 extern int __svc_flags;
 
-//int __clnt_sigfillset(sigset_t *);
+int __clnt_sigfillset(sigset_t *);
+
