@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.pl,v 1.9 2022/05/31 03:01:07 cvsuser Exp $
+# $Id: makelib.pl,v 1.10 2022/05/31 05:35:52 cvsuser Exp $
 # Makefile generation under WIN32 (MSVC/WATCOMC/MINGW) and DJGPP.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
@@ -31,7 +31,10 @@
 #   Download and install: msys2-x86_64-YYYYMMDD.exe, then
 #
 #       pacman -S base-devel
-#       pacman -S mingw-w64-x86_64-toolchain    [64-bit]
+#
+#       pacman -S mingw-w64-x86_64-gcc          [64-bit]
+#    or pacman -S mingw-w64-x86_64-toolchain
+#
 #       pacman -S mingw-w64-i686-gcc            [32-bit]
 #
 

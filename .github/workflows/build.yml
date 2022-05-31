@@ -42,10 +42,6 @@ jobs:
       run: |
         c:\msys64\usr\bin\pacman --noconfirm -S base-devel
         c:\msys64\usr\bin\pacman --noconfirm -S mingw-w64-x86_64-gcc
-        dir c:\msys64
-        dir c:\msys64\bin
-        dir c:\msys64\mingw32\bin
-        dir c:\msys64\mingw64\bin
 
     - name: Generate Makefiles
       shell: cmd
