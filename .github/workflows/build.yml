@@ -36,8 +36,8 @@ jobs:
       with:
         arch: x86
 
-    - name: MinGW64 setup
-      if: startsWith(matrix.config.name, 'Windows Latest MingGW')
+    - name: MinGW-w64 setup
+      if: startsWith(matrix.config.name, 'Windows Latest MinGW')
       shell: cmd
       run: |
         @set PATH=c:\msys64\bin;%PATH%
