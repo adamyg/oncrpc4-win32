@@ -7,12 +7,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: 
+        config:
         - {
             name: "Windows Latest MSVC",
             os: windows-latest,
             toolchain: vc2022,
-            toolversion: vc170
+            toolversion: vs170
           }
         - {
            name: "Windows Latest MinGW",
@@ -20,7 +20,7 @@ jobs:
            toolchain: mingw64,
            toolversion: mingw64
           }
-          
+
     steps:
 
     - name: Checkout repository
@@ -30,22 +30,32 @@ jobs:
       run: |
         git submodule update --init --recursive
 
-    - uses: ilammy/msvc-dev-cmd@v1
+    - name: MSVC setup
+      uses: ilammy/msvc-dev-cmd@v1
       if: startsWith(matrix.config.name, 'Windows Latest MSVC')
       with:
         arch: x86
 
-    - name: Generating Makefiles
+    - name: MinGW64 setup
+      if: startsWith(matrix.config.name, 'Windows Latest MingGW')
+      shell: cmd
+      run: |
+        @set PATH=c:\msys64\bin;%PATH%
+        pacman -S base-devel
+        pacman -S mingw-w64-x86_64-gcc
+        dir c:\msys64
+        dir c:\msys64\bin
+        dir c:\msys64\mingw32\bin
+        dir c:\msys64\mingw64\bin
+
+    - name: Generate Makefiles
       shell: cmd
       run: |
         @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
         @set PERL=c:/Strawberry/perl/bin/perl
         c:/Strawberry/perl/bin/perl makelib.pl --perlpath=c:/Strawberry/perl/bin --busybox=./win32/busybox --wget=./win32/wget "${{ matrix.config.toolchain }}"
-        dir c:\msys64
-        dir c:\msys64\mingw32\bin
-        dir c:\msys64\mingw64\bin
 
-    - name: Compiling
+    - name: Compile
       shell: cmd
       run: |
         @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
@@ -57,3 +67,4 @@ jobs:
       with:
         name: package-${{ matrix.config.toolchain }}
         path: ./bin.${{ matrix.config.toolversion }}/release/*
+
