@@ -34,11 +34,12 @@
 
 /* missing definitions */
 
-#if defined(_MSC_VER) || defined(__MINGW64__)
+#if defined(_MSC_VER) || \
+    defined(__MINGW64_VERSION_MAJOR) /* MingGW-w64/32 */
 #include <Iphlpapi.h>                           /* if_nametoindex() */
 #endif
 
-#if defined(__MINGW32__) && !defined(__MINGW64__)
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)
 INT WSAAPI inet_pton(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
 PCSTR WSAAPI inet_ntop(INT Family, const VOID *pAddr, PSTR pStringBuf, size_t StringBufSize);
 

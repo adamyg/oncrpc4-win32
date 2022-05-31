@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.in,v 1.5 2022/05/30 17:07:13 cvsuser Exp $
+# $Id: makelib.in,v 1.6 2022/05/31 03:01:07 cvsuser Exp $
 # -*- mode: perl; tabs: 8; indent-width: 4; -*-
 # makelib configuration
 #
@@ -116,7 +116,7 @@ Configure()
                 add_define('HAVE_CONFIG_H');
                 add_define('WIN32_WINNT=0x601');
 
-                if ($TOOLCHAIN =~ /^mingw64/) {
+                if ($TOOLCHAIN =~ /^mingw(64|32)/) {
                     add_system_library('-lDbghelp');    # debug helpers
                     add_system_library('-lBcrypt');
                 }

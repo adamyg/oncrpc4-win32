@@ -51,7 +51,8 @@ typedef uint16_t u_int16_t;
 typedef uint32_t u_int32_t;
 typedef uint64_t u_int64_t;
 
-#if !defined(__MINGW32__) || defined(__MINGW64__)
+#if !defined(__MINGW32__) || \
+    defined(__MINGW64_VERSION_MAJOR) /*MingGW-w64/32*/
 typedef struct {
 	uint32_t __bits[4];
 } sigset_t;
@@ -72,7 +73,7 @@ typedef int id_t;
 #endif
 
 #if defined(_MSC_VER) || \
-        (defined(__MINGW32__) && !defined(__MINGW64__))
+        (defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR))
 typedef int pid_t;
 #endif
 

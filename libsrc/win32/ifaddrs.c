@@ -37,7 +37,7 @@
 #include "ifaddrs.h"
 
 #if defined(__MINGW32__)
-#if defined(__MINGW64__)
+#if defined(__MINGW64_VERSION_MAJOR) /*MingGW-w64/32*/
 #include <Iphlpapi.h>
 #else
 #include <iptypes.h>  /*>=0x601*/

@@ -50,7 +50,7 @@ extern __inline void ReadWriteBarrier(void);
 
 #elif defined(__MINGW32__)
 typedef long satomic_lock_t;
-#if defined(__MINGW64_VERSION_MAJOR) /*MinGW-64*/
+#if defined(__MINGW64_VERSION_MAJOR) /*MingGW-w64/32*/
 #include <intrin.h>
 #define SATOMIC_INTERLOCK_EXCHANGE _InterlockedExchange
 #define SATOMIC_FENCE _ReadWriteBarrier();
