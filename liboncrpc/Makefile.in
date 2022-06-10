@@ -1,5 +1,5 @@
 # -*- mode: mak; indent-tabs-mode: t; tab-width: 8 -*-
-# $Id: Makefile.in,v 1.5 2022/05/31 03:35:31 cvsuser Exp $
+# $Id: Makefile.in,v 1.6 2022/06/10 12:43:20 cvsuser Exp $
 # liboncrpc makefile.
 #
 # Copyright (c) 2020 - 2022, Adam Young.
@@ -190,7 +190,7 @@ RESOURCES=\
 LIBOBJS=	$(addprefix $(D_OBJ)/,$(subst .c,$(O),$(CSOURCES)))
 
 DLLOBJS=	$(subst $(O),.lo,$(LIBOBJS))
-ifeq (mingw,$(findstring mingw,"@build_os@"))
+ifeq (mingw,$(findstring mingw,"@TOOLCHAIN@"))
 DLLOBJS+=	$(addprefix $(D_OBJ)/,$(subst .rc,_res.o,$(RESOURCES)))
 else
 DLLOBJS+=	$(addprefix $(D_OBJ)/,$(subst .rc,.res,$(RESOURCES)))

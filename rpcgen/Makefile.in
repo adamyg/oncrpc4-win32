@@ -1,5 +1,5 @@
 # -*- mode: mak; indent-tabs-mode: t; tab-width: 8 -*-
-# $Id: Makefile.in,v 1.3 2022/05/30 17:07:14 cvsuser Exp $
+# $Id: Makefile.in,v 1.4 2022/06/10 12:44:09 cvsuser Exp $
 # rpcgen Makefile
 #
 # Copyright (c) 2022, Adam Young.
@@ -134,10 +134,12 @@ RESOURCES=\
 
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .cpp,$(O),$(CPPSOURCES)))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .c,$(O),$(CSOURCES)))
-ifeq (mingw,$(findstring mingw,"@build_os@"))
+ifeq ("win32","@build_os@")
+ifeq (mingw,$(findstring mingw,"@TOOLCHAIN@"))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,_res.o,$(RESOURCES)))
 else
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,.res,$(RESOURCES)))
+endif
 endif
 
 XCLEAN=		service_license.h bsd_license.h

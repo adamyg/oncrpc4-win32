@@ -1,5 +1,5 @@
 # -*- mode: mak; indent-tabs-mode: t; tab-width: 8 -*-
-# $Id: Makefile.in,v 1.5 2022/05/30 17:07:14 cvsuser Exp $
+# $Id: Makefile.in,v 1.7 2022/06/10 12:44:17 cvsuser Exp $
 # rpccpp Makefile
 #
 # Copyright (c) 2022, Adam Young.
@@ -103,6 +103,7 @@ LDLIBS=		-L$(D_LIB) $(LINKLIBS) @LIBS@ @EXTRALIBS@
 ARFLAGS=	rcv
 YFLAGS=		-d
 RMFLAGS=	-f
+RMDFLAGS=	-rf
 
 
 #########################################################################################
@@ -126,7 +127,7 @@ RESOURCES=\
 
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .cpp,$(O),$(CPPSOURCES)))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .c,$(O),$(CSOURCES)))
-ifeq (mingw,$(findstring mingw,"@build_os@"))
+ifeq (mingw,$(findstring mingw,"@TOOLCHAIN@"))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,_res.o,$(RESOURCES)))
 else
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,.res,$(RESOURCES)))
