@@ -31,6 +31,8 @@
 #include <assert.h>
 #include <unistd.h>
 
+#if !defined(HAVE_PTHREAD_H)
+
 #include "timespec.h"
 #include "satomic.h"
 
@@ -214,5 +216,7 @@ pthread_cond_timedwait_relative_np(pthread_cond_t *cond, pthread_mutex_t *mutex,
 {
     return (condition_wait(cond, mutex, reltime, 1));
 }
+
+#endif /*HAVE_PTHREAD_H*/
 
 /*end*/

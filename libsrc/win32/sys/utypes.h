@@ -26,7 +26,21 @@
  * ==end==
  */
 
-#include <sys/types.h>
+#if defined(_MSC_VER)
+#pragma warning(disable:4115)
+
+#elif defined(__WATCOMC__)
+#if (__WATCOMC__ < 1200)
+#error utypes.h: old WATCOM Version, upgrade to OpenWatcom ...
+#endif
+
+#elif defined(__MINGW32__)
+
+#else
+#error utypes.h: Unknown compiler
+#endif
+
+#include <sys/types.h>                          /* System types */
 #include <stdint.h>
 #include <assert.h>
 

@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <unistd.h>
 
+#if !defined(HAVE_PTHREAD_H)
 
 /*
  NAME
@@ -84,5 +85,7 @@ pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
     (void) InitOnceExecuteOnce(&once_control->init_once, InitHandleFunction, (PVOID) init_routine, &lpContext);
     return 0;
 }
+
+#endif /*!HAVE_PTHREAD_H*/
 
 /*end*/

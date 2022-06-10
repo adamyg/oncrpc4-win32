@@ -32,6 +32,8 @@
 #include <assert.h>
 #include <unistd.h>
 
+#if !defined(HAVE_PTHREAD_H)
+
 typedef void(*destructor_t)(void *);
 
 typedef struct tlsatom {
@@ -163,4 +165,7 @@ pthread_getspecific(pthread_key_t key)
     return NULL;
 }
 
+#endif /*HAVE_PTHREAD_H*/
+
 /*end*/
+

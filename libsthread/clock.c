@@ -138,6 +138,7 @@ clock_gettime(int clockid, struct timespec *time_spec)
 #endif  /*__MINGW32__*/
 
 
+#if !defined(HAVE_PTHREAD_H)
 int
 usleep(useconds_t useconds)
 {
@@ -153,5 +154,6 @@ sleep(unsigned secs)
     Sleep((DWORD)secs * 1000);
     return 0;
 }
+#endif
 
 /*end*/

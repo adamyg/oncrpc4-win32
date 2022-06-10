@@ -62,9 +62,21 @@
 #endif
 #if defined(LIBRPC_DYNAMIC)
     #if defined(LIBRPC_LIBRARY)     /* library source */
-        #define LIBRPC_API __declspec(dllexport)
+        #ifdef __GNUC__
+            #define LIBRPC_API __attribute__((dllexport)) extern
+        #elif defined(__WATCOMC__)
+            #define LIBRPC_API extern __declspec(dllexport)
+        #else
+            #define LIBRPC_API __declspec(dllexport)
+        #endif
     #else
-        #define LIBRPC_API __declspec(dllimport)
+        #ifdef __GNUC__
+            #define LIBRPC_API __attribute__((dllimport)) extern
+        #elif defined(__WATCOMC__)
+            #define LIBRPC_API extern __declspec(dllimport)
+        #else
+            #define LIBRPC_API __declspec(dllimport)
+        #endif
     #endif
 
 #else   /*static*/
@@ -79,11 +91,20 @@
 #endif
 #ifndef LIBRPC_API
 #define LIBRPC_API extern
+#define LIBRPC_VAR extern
+#else
+#define LIBW32_VAR LIBW32_API
 #endif
 #endif //!LIBW32_API
 
+
 /*
- *  Calling convention.
+ *  Binding:
+ *
+ * Usage:
+ *      __BEGIN_DECLS
+ *      void my_declarations();
+ *      __END_DECLS
  */
 #ifndef __BEGIN_DECLS
 #  ifdef __cplusplus

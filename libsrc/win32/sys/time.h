@@ -29,10 +29,11 @@
 
 #include <sys/cdefs.h>
 #if defined(__MINGW32__)
-#include_next <sys/time.h>
+#include_next <sys/time.h>              /* struct timeval */
 #else
-#include <sys/socket.h>
+#include <sys/socket.h>                 /* struct timeval */
 #endif
+#include <sys/utypes.h>                 /* suseconds_t */
 #include <time.h>
 
 #if defined(__WATCOMC__)                        /* missing definitions */
@@ -61,6 +62,7 @@ struct timespec {
 }
 #endif
 
+/* Operations on timevals. */
 #if !defined(timerisset)
 #define timerisset(tvp)         ((tvp)->tv_sec || (tvp)->tv_usec)
 #endif
@@ -95,6 +97,8 @@ struct timespec {
             (vvp)->tv_usec += 1000000;      \
         }                                   \
     } while (0)
+
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int gettimeofday(struct timeval *tv, /*struct timezone*/ void *tz);

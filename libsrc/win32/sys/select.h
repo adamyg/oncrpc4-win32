@@ -26,7 +26,8 @@
  * ==end==
  */
 
-#include <sys/cdefs.h>
-#include <rpc_win32.h>
+#if !defined(_WINSOCK2_H)                       /* MINGW32 guard */
+#include <rpc_win32.h>                          /* winsock and windows.h guard */
+#endif
 
 /*end*/
