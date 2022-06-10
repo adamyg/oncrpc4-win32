@@ -77,7 +77,6 @@ jobs:
         @if "${{ matrix.config.toolchain }}"=="mingw64" set PATH=c:\msys64\mingw64\bin;%PATH%
         @if "${{ matrix.config.toolchain }}"=="owc20"  call .\support\owc20setenv.bat C:\Watcom
         @set PERL=c:/Strawberry/perl/bin/perl
-        @set SHELL=
         .\win32\gmake-42 release
 
     - name: Package

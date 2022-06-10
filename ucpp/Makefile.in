@@ -49,6 +49,7 @@ endif
 RM=		@RM@
 RC=		@RC@
 PERL=		@PERL@
+LIBTOOL=	@LIBTOOL@
 
 # Configuration
 
@@ -118,8 +119,7 @@ CSOURCES=\
 	lexer.c			\
 	macro.c			\
 	mem.c			\
-	nhash.c 		\
-	\
+	nhash.c			\
 	cppmain.c
 
 RESOURCES=\
@@ -154,8 +154,8 @@ ucpp_license.h:		LICENSE ../liboncrpc/mklicense.pl
 
 $(D_BIN)/$(TARGET):	MAPFILE=$(basename $@).map
 $(D_BIN)/$(TARGET):	LINKLIBS=-lcompat
-$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS) $(RESOURCES)
-		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
+$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS)
+		$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
 
 $(D_OBJ)/.created:
 		-@mkdir $(D_OBJ)

@@ -49,6 +49,7 @@ endif
 RM=		@RM@
 RC=		@RC@
 PERL=		@PERL@
+LIBTOOL=	@LIBTOOL@
 
 # Configuration
 
@@ -155,8 +156,8 @@ bsd_license.h:		../liboncrpc/bsd_license.txt ../liboncrpc/mklicense.pl
 
 $(D_BIN)/$(TARGET):	MAPFILE=$(basename $@).map
 $(D_BIN)/$(TARGET):	LINKLIBS=-loncrpc -lsthread -lcompat
-$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS) $(RESOURCES)
-		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
+$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS)
+		$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
 
 $(D_OBJ)/.created:
 		-@mkdir $(D_OBJ)
@@ -178,4 +179,3 @@ $(D_OBJ)/%_res.o:	%.rc
 		$(RC) -o $@ $<
 
 #end
-
