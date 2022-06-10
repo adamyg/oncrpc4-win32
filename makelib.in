@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.in,v 1.6 2022/05/31 03:01:07 cvsuser Exp $
+# $Id: makelib.in,v 1.7 2022/06/10 16:00:23 cvsuser Exp $
 # -*- mode: perl; tabs: 8; indent-width: 4; -*-
 # makelib configuration
 #
@@ -69,6 +69,49 @@ $PACKAGE_FILE   = 'package.h';
 ## Toolchain
 
 sub
+ResolveWINKITx86()
+{
+        my $ProgramFiles = $ENV{"ProgramFiles(x86)"};
+        $ProgramFiles =~ s/\\/\//g;
+
+        my @WINKIT = (                                  # Vista+
+                # https://en.wikipedia.org/wiki/Microsoft_Windows_SDK
+                "${ProgramFiles}/Windows Kits/8.0/Lib/win8/um/x86",
+                "${ProgramFiles}/Windows Kits/8.1/Lib/winv6.3/um/x86",
+                "${ProgramFiles}/Windows Kits/10",
+                "${ProgramFiles}/Windows Kits/11"
+                );
+
+        my @sdks;
+        foreach (@WINKIT) {
+                my $sdk = $_;
+                next if (! -d $sdk);
+
+                if (/\/1[01]$/) {                       # "Lib/10.0.xxxxx.0/um/x86"
+                    my @winsdk10 = glob("'${sdk}/Lib/*/um/x86'");
+                    foreach (@winsdk10) {
+                        next if (! -f "$_/Kernel32.lib");
+                        push @sdks, $_;
+                    }
+
+                } else {
+                    next if (! -f "${sdk}/Kernel32.lib");
+                    push @sdks, $sdk;
+                }
+        }
+
+        die "cannot locate any suitable winsdks\n"
+                if (! scalar @sdks);
+
+        foreach (@sdks) {
+                print "WINKIT:   $_\n";
+        }
+
+        set_winsdk($sdks[0]);
+}
+
+
+sub
 Configure()
 {
         ################################################################################
@@ -104,7 +147,7 @@ Configure()
                 add_define('_WIN32_WINNT=0x600');       # Windows SDK
                 add_define('__STDC_WANT_LIB_EXT1__');
 
-                set_winsdk('C:/Program Files (x86)/Windows Kits/8.0/Lib/win8/um/x86');
+                ResolveWINKITx86();
         }
 
         ################################################################################

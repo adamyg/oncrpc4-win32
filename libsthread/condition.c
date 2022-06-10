@@ -40,6 +40,12 @@
 #define ETIMEDOUT EAGAIN
 #endif
 
+#pragma comment(lib, "Kernel32.lib")
+    //#if defined(__WATCOMC__)
+    //see: CONDITION_VARIABLE_INIT = {0}
+    //#define InitializeConditionVariable(__cv) memset(__cv,0,sizeof(*__cv))
+    //#endif
+
 static __inline DWORD
 timespec_to_msec(const struct timespec *a)
 {
