@@ -33,8 +33,12 @@
  *  ==end==
  */
 
+#if defined(HAVE_CONFIG_H)
+#include "w32config.h"
+#endif
+
 #if defined(_WIN32)
-#if !defined(_WIN32_WINNT)
+#if defined(LIBSTHREAD_SOURCE) && !defined(_WIN32_WINNT)
 #define _WIN32_WINNT 0x0600
 #endif
 #include "rpc_win32.h"
@@ -43,6 +47,11 @@
 #include <sys/utypes.h>
 #include <sys/uio.h>
 #include <time.h>
+
+#if defined(HAVE_PTHREAD_H)
+#include <pthread.h>
+
+#else /*!HAVE_PTHREAD_H*/
 
 #if defined(LIBSTHREAD_SOURCE) && (0)
 #define ENOTSUP ENOSYS
@@ -146,7 +155,7 @@ int pthread_cond_timedwait_relative_np(pthread_cond_t *cond, pthread_mutex_t *mu
  *  read-write locks
  */
 
- typedef struct pthread_rwlock_tag {
+typedef struct pthread_rwlock_tag {
     SRWLOCK srw;
     DWORD owner;
 } pthread_rwlock_t;
@@ -250,10 +259,14 @@ extern int clock_gettime(int clockid, struct timespec *time_spec);
 
 #if !defined(__MINGW32__)
 #if !defined(USECONDS_T)
-#define USECONDS_T
-typedef long useconds_t;
+#define USECONDS_T 1
+#ifdef _WIN64
+typedef unsigned long long useconds_t;
+#else
+typedef unsigned long useconds_t;
 #endif
-#endif
+#endif /*USECONDS_T*/
+#endif /*__MINGW32__*/
 
 int usleep(useconds_t useconds);
 unsigned sleep(unsigned seconds);
@@ -261,7 +274,7 @@ unsigned sleep(unsigned seconds);
 #ifdef __cplusplus
 }
 #endif
-
-#endif  /*STHREAD_H_INCLUDED*/
+#endif /*!HAVE_PTHREAD_H*/
+#endif /*STHREAD_H_INCLUDED*/
 
 /*end*/
