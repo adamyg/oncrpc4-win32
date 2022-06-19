@@ -1,5 +1,5 @@
 # -*- mode: mak; indent-tabs-mode: t; tab-width: 8 -*-
-# $Id: Makefile.in,v 1.3 2022/05/30 17:07:14 cvsuser Exp $
+# $Id: Makefile.in,v 1.4 2022/06/10 12:43:44 cvsuser Exp $
 # rpcinfo Makefile
 #
 # Copyright (c) 2022, Adam Young.
@@ -49,6 +49,7 @@ endif
 RM=		@RM@
 RC=		@RC@
 PERL=		@PERL@
+LIBTOOL=	@LIBTOOL@
 
 # Configuration
 
@@ -123,10 +124,12 @@ RESOURCES=\
 
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .cpp,$(O),$(CPPSOURCES)))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .c,$(O),$(CSOURCES)))
-ifeq (mingw,$(findstring mingw,"@build_os@"))
+ifeq ("win32","@build_os@")
+ifeq (mingw,$(findstring mingw,"@TOOLCHAIN@"))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,_res.o,$(RESOURCES)))
 else
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,.res,$(RESOURCES)))
+endif
 endif
 
 XCLEAN=		service_license.h bsd_license.h
@@ -153,8 +156,8 @@ bsd_license.h:		../liboncrpc/bsd_license.txt ../liboncrpc/mklicense.pl
 
 $(D_BIN)/$(TARGET):	MAPFILE=$(basename $@).map
 $(D_BIN)/$(TARGET):	LINKLIBS=-loncrpc -lsthread -lcompat
-$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS) $(RESOURCES)
-		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
+$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS)
+		$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
 
 $(D_OBJ)/.created:
 		-@mkdir $(D_OBJ)
@@ -176,4 +179,3 @@ $(D_OBJ)/%_res.o:	%.rc
 		$(RC) -o $@ $<
 
 #end
-

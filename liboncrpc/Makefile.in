@@ -1,5 +1,5 @@
 # -*- mode: mak; indent-tabs-mode: t; tab-width: 8 -*-
-# $Id: Makefile.in,v 1.4 2022/05/30 17:07:13 cvsuser Exp $
+# $Id: Makefile.in,v 1.6 2022/06/10 12:43:20 cvsuser Exp $
 # liboncrpc makefile.
 #
 # Copyright (c) 2020 - 2022, Adam Young.
@@ -74,7 +74,8 @@ XFLAGS=
 CFLAGS=		@CFLAGS@
 CWARN=		@CWARN@
 ifeq (gcc,$(findstring gcc,$(CC)))
-CWARN+=		-Wno-unused-result -Wno-unused-parameter -Wno-unused-variable -Wno-deprecated-declarations -Wno-unused-but-set-variable
+CWARN+=		-Wno-unused-result -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable
+CWARN+=		-Wno-deprecated-declarations -Wno-sign-compare
 endif
 CDEBUG=		@CDEBUG@
 CRELEASE=	@CRELEASE@
@@ -189,7 +190,7 @@ RESOURCES=\
 LIBOBJS=	$(addprefix $(D_OBJ)/,$(subst .c,$(O),$(CSOURCES)))
 
 DLLOBJS=	$(subst $(O),.lo,$(LIBOBJS))
-ifeq (mingw,$(findstring mingw,"@build_os@"))
+ifeq (mingw,$(findstring mingw,"@TOOLCHAIN@"))
 DLLOBJS+=	$(addprefix $(D_OBJ)/,$(subst .rc,_res.o,$(RESOURCES)))
 else
 DLLOBJS+=	$(addprefix $(D_OBJ)/,$(subst .rc,.res,$(RESOURCES)))

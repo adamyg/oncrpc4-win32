@@ -199,7 +199,11 @@ svc_pollfd_add(int fd, struct svc_fdset *fds)
 		return NULL;
 
 	for (i = 0; i < fds->fdnum; i++)
+#if defined(_WIN32)
+		if (pfd[i].fd == (SOCKET)-1) {
+#else
 		if (pfd[i].fd == -1) {
+#endif
 			if (i >= fds->fdused)
 				fds->fdused = i + 1;
 			DPRINTF("add fd=%d slot=%d fdused=%d",
@@ -231,7 +235,11 @@ svc_pollfd_del(int fd, struct svc_fdset *fds)
 		return NULL;
 
 	for (i = 0; i < fds->fdnum; i++) {
+#if defined(_WIN32)
+		if (pfd[i].fd != (SOCKET)fd)
+#else
 		if (pfd[i].fd != fd)
+#endif
 			continue;
 
 		pfd[i].fd = -1;
@@ -240,7 +248,11 @@ svc_pollfd_del(int fd, struct svc_fdset *fds)
 			return fds;
 
 		do
-			if (pfd[i].fd != -1) 
+#if defined(_WIN32)
+			if (pfd[i].fd != (SOCKET)-1)
+#else
+			if (pfd[i].fd != INVALID_SOCKET)
+#endif
 				break;
 		while (--i >= 0);
 
@@ -295,10 +307,10 @@ svc_fdset_alloc(int fd)
 {
 	struct svc_fdset *fds;
 
-	if (!__isthreaded || fdsetkey == -2)
+	if (!__isthreaded || fdsetkey == (thread_key_t)-2)
 		return svc_fdset_resize(fd, &__svc_fdset);
 
-	if (fdsetkey == -1)
+	if (fdsetkey == (thread_key_t)-1)
 		thr_keycreate(&fdsetkey, svc_fdset_free);
 
 	if ((fds = thr_getspecific(fdsetkey)) == NULL) {
@@ -330,7 +342,7 @@ svc_fdset_init(int flags)
 {
 	DPRINTF("%x", flags);
 	__svc_flags = flags;
-	if ((flags & SVC_FDSET_MT) && fdsetkey == -2)
+	if ((flags & SVC_FDSET_MT) && fdsetkey == (thread_key_t)-2)
 		fdsetkey = -1;
 }
 

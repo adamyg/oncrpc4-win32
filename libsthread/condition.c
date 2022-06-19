@@ -31,12 +31,20 @@
 #include <assert.h>
 #include <unistd.h>
 
+#if !defined(HAVE_PTHREAD_H)
+
 #include "timespec.h"
 #include "satomic.h"
 
 #if !defined(ETIMEDOUT)
 #define ETIMEDOUT EAGAIN
 #endif
+
+#pragma comment(lib, "Kernel32.lib")
+    //#if defined(__WATCOMC__)
+    //see: CONDITION_VARIABLE_INIT = {0}
+    //#define InitializeConditionVariable(__cv) memset(__cv,0,sizeof(*__cv))
+    //#endif
 
 static __inline DWORD
 timespec_to_msec(const struct timespec *a)
@@ -214,5 +222,7 @@ pthread_cond_timedwait_relative_np(pthread_cond_t *cond, pthread_mutex_t *mutex,
 {
     return (condition_wait(cond, mutex, reltime, 1));
 }
+
+#endif /*HAVE_PTHREAD_H*/
 
 /*end*/

@@ -1,5 +1,5 @@
 //#include <edidentifier.h>
-//__CIDENT_RCSID(NTServiceReg_cpp, "$Id: NTServiceReg.cpp,v 1.3 2022/05/30 17:07:13 cvsuser Exp $")
+//__CIDENT_RCSID(NTServiceReg_cpp, "$Id: NTServiceReg.cpp,v 1.4 2022/05/31 03:01:07 cvsuser Exp $")
 
 /* -*- mode: c; indent-width: 8; -*- */
 /*
@@ -41,7 +41,7 @@
 #include "NTServiceReg.h"                       // public interface
 #include "NTServiceIO.h"                        // IDiagnostics
 
-#if defined(__MINGW32__) && !defined(__MINGW64__)
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)
 #define LSTATUS LONG
 #endif
 

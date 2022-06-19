@@ -26,7 +26,21 @@
  * ==end==
  */
 
-#include <sys/types.h>
+#if defined(_MSC_VER)
+#pragma warning(disable:4115)
+
+#elif defined(__WATCOMC__)
+#if (__WATCOMC__ < 1200)
+#error utypes.h: old WATCOM Version, upgrade to OpenWatcom ...
+#endif
+
+#elif defined(__MINGW32__)
+
+#else
+#error utypes.h: Unknown compiler
+#endif
+
+#include <sys/types.h>                          /* System types */
 #include <stdint.h>
 #include <assert.h>
 
@@ -51,7 +65,8 @@ typedef uint16_t u_int16_t;
 typedef uint32_t u_int32_t;
 typedef uint64_t u_int64_t;
 
-#if !defined(__MINGW32__) || defined(__MINGW64__)
+#if !defined(__MINGW32__) || \
+    defined(__MINGW64_VERSION_MAJOR) /*MingGW-w64/32*/
 typedef struct {
 	uint32_t __bits[4];
 } sigset_t;
@@ -72,7 +87,7 @@ typedef int id_t;
 #endif
 
 #if defined(_MSC_VER) || \
-        (defined(__MINGW32__) && !defined(__MINGW64__))
+        (defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR))
 typedef int pid_t;
 #endif
 

@@ -1,5 +1,5 @@
 # -*- mode: mak; indent-tabs-mode: t; tab-width: 8 -*-
-# $Id: Makefile.in,v 1.5 2022/05/30 17:07:14 cvsuser Exp $
+# $Id: Makefile.in,v 1.7 2022/06/10 12:44:17 cvsuser Exp $
 # rpccpp Makefile
 #
 # Copyright (c) 2022, Adam Young.
@@ -49,6 +49,7 @@ endif
 RM=		@RM@
 RC=		@RC@
 PERL=		@PERL@
+LIBTOOL=	@LIBTOOL@
 
 # Configuration
 
@@ -103,6 +104,7 @@ LDLIBS=		-L$(D_LIB) $(LINKLIBS) @LIBS@ @EXTRALIBS@
 ARFLAGS=	rcv
 YFLAGS=		-d
 RMFLAGS=	-f
+RMDFLAGS=	-rf
 
 
 #########################################################################################
@@ -117,8 +119,7 @@ CSOURCES=\
 	lexer.c			\
 	macro.c			\
 	mem.c			\
-	nhash.c 		\
-	\
+	nhash.c			\
 	cppmain.c
 
 RESOURCES=\
@@ -126,7 +127,7 @@ RESOURCES=\
 
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .cpp,$(O),$(CPPSOURCES)))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .c,$(O),$(CSOURCES)))
-ifeq (mingw,$(findstring mingw,"@build_os@"))
+ifeq (mingw,$(findstring mingw,"@TOOLCHAIN@"))
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,_res.o,$(RESOURCES)))
 else
 OBJS+=		$(addprefix $(D_OBJ)/,$(subst .rc,.res,$(RESOURCES)))
@@ -153,8 +154,8 @@ ucpp_license.h:		LICENSE ../liboncrpc/mklicense.pl
 
 $(D_BIN)/$(TARGET):	MAPFILE=$(basename $@).map
 $(D_BIN)/$(TARGET):	LINKLIBS=-lcompat
-$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS) $(RESOURCES)
-		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
+$(D_BIN)/$(TARGET):	$(D_OBJ)/.created $(OBJS)
+		$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) @LDMAPFILE@
 
 $(D_OBJ)/.created:
 		-@mkdir $(D_OBJ)

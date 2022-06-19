@@ -49,6 +49,8 @@
 #include <assert.h>
 #include <unistd.h>
 
+#if !defined(HAVE_PTHREAD_H)
+
 #include "satomic.h"
 #include "thread_instance.h"
 
@@ -375,5 +377,7 @@ pthread_attr_getstackaddr(const pthread_attr_t *attr, void **stackaddr)
     assert(0xBABEFACE == attr->attributes[ATTRIBUTE_MAGIC]);
     return ENOSYS;
 }
+
+#endif /*HAVE_PTHREAD_H*/
 
 /*end*/

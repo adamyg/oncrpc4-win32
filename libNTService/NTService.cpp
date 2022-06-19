@@ -1,5 +1,5 @@
 // #include <edidentifier.h>
-// __CIDENT_RCSID(NTService_cpp, "$Id: NTService.cpp,v 1.3 2022/05/30 17:07:13 cvsuser Exp $")
+// __CIDENT_RCSID(NTService_cpp, "$Id: NTService.cpp,v 1.4 2022/05/31 03:01:07 cvsuser Exp $")
 
 /* -*- mode: c; indent-width: 8; -*- */
 /*
@@ -723,7 +723,7 @@ void CNTService::ConfigClose()
 }
 
 
-#if defined(__MINGW32__) && !defined(__MINGW64__)
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)
 static int
 asctime_s(char *buf, size_t buflen, const struct tm *tm)
 {

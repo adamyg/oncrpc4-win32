@@ -64,6 +64,9 @@ __RCSID("$NetBSD: rpc_generic.c,v 1.30 2017/05/03 21:39:27 christos Exp $");
 #include <netconfig.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(HAVE_STRINGS_H)
+#include <strings.h>
+#endif
 #include <syslog.h>
 #include <rpc/nettype.h>
 #include <unistd.h>

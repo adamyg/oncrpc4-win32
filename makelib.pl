@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: makelib.pl,v 1.8 2022/05/30 17:07:13 cvsuser Exp $
+# $Id: makelib.pl,v 1.11 2022/06/10 12:02:59 cvsuser Exp $
 # Makefile generation under WIN32 (MSVC/WATCOMC/MINGW) and DJGPP.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
@@ -28,10 +28,14 @@
 #
 # MSYS/MINGW install
 #
-#   Download and install: msys2-x86_64-YYYYMMDD.exe
+#   Download and install: msys2-x86_64-YYYYMMDD.exe, then
 #
 #       pacman -S base-devel
-#       pacman -S mingw-w64-x86_64-toolchain
+#
+#       pacman -S mingw-w64-x86_64-gcc          [64-bit]
+#    or pacman -S mingw-w64-x86_64-toolchain
+#
+#       pacman -S mingw-w64-i686-gcc            [32-bit]
 #
 
 use strict;
@@ -84,7 +88,6 @@ my %x_environment   = (
             },
 
         'mingw'         => {    # MingW32 or MingW64 (default os)
-            build_os        => 'mingw32',
             TOOLCHAIN       => 'mingw',
             TOOLCHAINEXT    => '.mingw',
             CC              => 'gcc',
@@ -98,8 +101,10 @@ my %x_environment   = (
             RC              => 'windres -DGCC_WINDRES',
             DEFS            => '-DHAVE_CONFIG_H',
             CINCLUDE        => '',
-            CFLAGS          => '-std=gnu11 -fno-strength-reduce',
-            CXXFLAGS        => '-std=c++11 -fno-strength-reduce',
+            CFLAGS          => '@CCVER@ -fno-strength-reduce',
+            CCVER           => '-std=gnu11',
+            CXXFLAGS        => '@CXXVER@ -fno-strength-reduce',
+            CXXVER          => '-std=c++11',
             CDEBUG          => '-g',
             CWARN           => '-W -Wall -Wshadow -Wmissing-prototypes',
             CXXWARN         => '-W -Wall -Wshadow',
@@ -113,7 +118,6 @@ my %x_environment   = (
             },
 
         'mingw32'       => {    # MingW64 (32-bit mode)
-            build_os        => 'mingw32',
             TOOLCHAIN       => 'mingw32',
             TOOLCHAINEXT    => '.mingw32',
             CC              => 'gcc',
@@ -127,8 +131,10 @@ my %x_environment   = (
             RC              => 'windres -DGCC_WINDRES',
             DEFS            => '-DHAVE_CONFIG_H',
             CINCLUDE        => '',
-            CFLAGS          => '-m32 -std=gnu11 -fno-strength-reduce',
-            CXXFLAGS        => '-m32 -std=c++11 -fno-strength-reduce',
+            CFLAGS          => '-m32 @CCVER@ -fno-strength-reduce',
+            CCVER           => '-std=gnu11',
+            CXXFLAGS        => '-m32 @CXXVER@ -fno-strength-reduce',
+            CXXVER          => '-std=c++11',
             CDEBUG          => '-g',
             CWARN           => '-W -Wall -Wshadow -Wmissing-prototypes',
             CXXWARN         => '-W -Wall -Wshadow',
@@ -142,7 +148,6 @@ my %x_environment   = (
             },
 
         'mingw64'       => {    # MingW64 (64-bit mode)
-            build_os        => 'mingw64',
             TOOLCHAIN       => 'mingw64',
             TOOLCHAINEXT    => '.mingw64',
             CC              => 'gcc',
@@ -156,8 +161,10 @@ my %x_environment   = (
             RC              => 'windres -DGCC_WINDRES',
             DEFS            => '-DHAVE_CONFIG_H',
             CINCLUDE        => '',
-            CFLAGS          => '-m64 -std=gnu11 -fno-strength-reduce',
-            CXXFLAGS        => '-m64 -std=c++11 -fno-strength-reduce',
+            CFLAGS          => '-m64 @CCVER@ -fno-strength-reduce',
+            CCVER           => '-std=gnu11',
+            CXXFLAGS        => '-m64 @CXXVER@ -fno-strength-reduce',
+            CXXVER          => '-std=c++11',
             CDEBUG          => '-g',
             CWARN           => '-W -Wall -Wshadow -Wmissing-prototypes',
             CXXWARN         => '-W -Wall -Wshadow',
@@ -699,8 +706,9 @@ my %x_environment   = (
                 #
             CFLAGS          => '-q -6r -j -ei -db -zlf -bt=nt -bm -br -aa -sg',
             CXXFLAGS        => '-q -6r -j -ei -db -zlf -bt=nt -bm -br -cc++ -xs -xr',
-            CDEBUG          => '-d2 -hd -of+ ',
-            CXXDEBUG        => '-d2i -hd -od',
+            CDEBUG          => '-d2 -hd -of+',
+        ##  CXXDEBUG        => '-d2i -hd -od',
+            CXXDEBUG        => '-d2 -hd -od',
             CRELEASE        => '-ox -DNDEBUG',
             CWARN           => '-W3',
             CXXWARN         => '-W3',
@@ -712,7 +720,8 @@ my %x_environment   = (
             # not-supported
             MFCDIR          => '/tools/WinDDK/7600.16385.1',
             MFCCOPT         => '-q -j -ei -6r -d2  -hd -db -ofr -zlf -bt=nt -bm -br -aa',
-            MFCCXXOPT       => '-q -j -ei -6r -d2i     -db -ofr -zlf -bt=nt -bm -br -xs -xr -cc++',
+        ##  MFCCXXOPT       => '-q -j -ei -6r -d2i     -db -ofr -zlf -bt=nt -bm -br -xs -xr -cc++',
+            MFCCXXOPT       => '-q -j -ei -6r -d2      -db -ofr -zlf -bt=nt -bm -br -xs -xr -cc++',
             MFCCINCLUDE     => '-I$(MFCDIR)/inc/atl71 -I$(MFCDIR)/inc/mfc42',
             MFCLIBS         => '/LIBPATH:$(MFCDIR)\lib\atl\i386 /LIBPATH:$(MFCDIR)\lib\mfc\i386'
             }
@@ -745,7 +754,7 @@ my %win_entries     = (
         LIBTOOL             => '@PERLPATH@perl '.'$<LIBTOOL>',
         CPPDEP              => '',
         LT_OBJDIR           => '.libs/',
-        RC                  => 'rc',
+        RC                  => 'rc /nologo',
 
         LIBS                => '',
         EXTRALIBS           => 'advapi32.lib gdi32.lib'.
@@ -913,6 +922,7 @@ my @x_headers       = (     #headers
         'sys/wait.h',
         'sys/mman.h',
         'sys/utime.h',
+        'sys/timeb.h',
         'sys/mount.h',
         'sys/stat.h',
         'sys/statfs.h',
@@ -3040,6 +3050,8 @@ Makefile($$$)           # (type, dir, file)
         } else {
             if ($type eq 'vc' || $type eq 'wc') {
                 if (! /LIBTOOL/) {              # not LIBTOOL command lines
+
+                    # option conversion
                     s/(\$\(CFLAGS\).*) -o \$\@/$1 -Fo\$@ -Fd\$(\@D)\//;
                     s/(\$\(CXXFLAGS\).*) -o \$\@/$1 -Fo\$@ -Fd\$(\@D)\//;
 
@@ -3057,6 +3069,8 @@ Makefile($$$)           # (type, dir, file)
 
             } elsif ($type eq 'owc') {
                 if (! /LIBTOOL/) {              # not LIBTOOL command lines
+
+                    # option and directory slash conversion
                     if ('-o' ne $x_tokens{OSWITCH}) {
                         s/(\$\(CFLAGS\).*) -o \$\@/$1 -Fo=\$(subst \/,\\,\$@)/;
                         s/(\$\(CXXFLAGS\).*) -o \$\@/$1 -Fo=\$(subst \/,\\,\$@)/;
@@ -3075,6 +3089,18 @@ Makefile($$$)           # (type, dir, file)
                         s/-L([^\s]+)/-"Wl,LIBPATH \$(subst \/,\\,$1)"/;
                             # -Wl,<linker directive>
                     }
+
+                    if ('-i=' eq $x_tokens{ISWITCH}) {
+                        # s/-I([^\s]+)/-i="$1"/g;
+                        # s/-I ([^\s]+)/-i="$1"/g;
+                            # gnuwin32 (gmake 3.x) quotes would be retained;
+                            # this can not be guaranteed under an alt instance, for example gmake (4.x).
+                        s/-I([^\s]+)/-i=\$(subst \/,\\,$1)/g;
+                        s/-I ([^\s]+)/-i=\$(subst \/,\\,$1)/g;
+                    }
+
+                    s/\$</\$(subst \/,\\,\$<)/;
+                    s/\$\^/\$(subst \/,\\,\$^)/;
 
                 } elsif (/[\\]$/) {
                     $continuation = 1;          # LIBTOOL, continuation?
@@ -3130,20 +3156,6 @@ Makefile($$$)           # (type, dir, file)
             $xclean .= ' $(D_OBJ)/*.mbr';
 
         } elsif ($type eq 'owc') {              # OpenWatcom
-            # directory slash conversion
-
-            if ('-i=' eq $x_tokens{ISWITCH}) {
-            # $text =~ s/-I([^\s]+)/-i="$1"/g;
-            # $text =~ s/-I ([^\s]+)/-i="$1"/g;
-                    #gnuwin32 (gmake 3.x) make quotes would be retained;
-                    #this can not be guaranteed under an alt instance, for example gmake (4.x).
-                $text =~ s/-I([^\s]+)/-i=\$(subst \/,\\,$1)/g;
-                $text =~ s/-I ([^\s]+)/-i=\$(subst \/,\\,$1)/g;
-            }
-
-            $text =~ s/\$</\$(subst \/,\\,\$<)/g;
-            $text =~ s/\$\^/\$(subst \/,\\,\$^)/g;
-
             $clean .= ' *.err';
             $xclean .= ' $(D_OBJ)/*.mbr';
         }

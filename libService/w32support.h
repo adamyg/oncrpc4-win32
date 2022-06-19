@@ -67,7 +67,7 @@
 #define _strnicmp(__a,__b,__c) strncasecmp(__a,__b,__c)
 #define _stricmp(__a,__b) strcasecmp(__a,__b)
 
-#if !defined(__MINGW64__) && defined(__cplusplus)
+#if !defined(__MINGW64_VERSION_MAJOR) && defined(__cplusplus)
 extern "C" __stdcall int sprintf_s( char * __s, size_t __n, const char * __format, ... );
 extern "C" __stdcall int vsprintf_s( char * __s, size_t __n, const char * __format, va_list __arg );
 #endif  // __cplusplus
