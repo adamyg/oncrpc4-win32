@@ -1,10 +1,10 @@
-# $Id: makeconfig.pm,v 1.4 2022/06/10 12:02:59 cvsuser Exp $
+# $Id: makeconfig.pm,v 1.5 2025/06/04 19:01:20 cvsuser Exp $
 # Makefile generation under Win32.
 # -*- perl; tabs: 8; indent-width: 4; -*-
 # Automake emulation for non-unix environments.
 #
 #
-# Copyright (c) 2020 - 2022, Adam Young.
+# Copyright (c) 2020 - 2025, Adam Young.
 # All rights reserved.
 #
 # The applications are free software: you can redistribute it
@@ -57,6 +57,7 @@ our $CONFIG_FILE    = 'w32config.h';
 our $TOOLCHAIN      = undef;
 
 our @MAKEFILES      = ();                       # local makefiles; build order
+our @CONTRIBEXTRA   = ();
 
 our @LIBRARIES      = ();                       # local libraries -l<xxx> lib<xxx>.lib
 our @LIBRARIES2     = ();                       # local libraries -l<xxx> xxx.lib
@@ -152,6 +153,8 @@ sub LoadConfigure($$$$$$)
     Configure();
     die "${makelib}: PACKAGE not defined\n"
         if (! $PACKAGE);
+
+    $self->{NOTES} = NOTES();
 
     if (defined $PACKAGE_H) {
         print "\n";
@@ -307,6 +310,8 @@ sub __ExportConfigurations
 
     $self->{PACKAGE}        = $PACKAGE if (defined $PACKAGE);
     $self->{PACKAGE_NAME}   = $PACKAGE_NAME;
+    $self->{PACKAGE_VERSION} = $PACKAGE_VERSION;
+
     $self->{PACKAGE_PATH}   = $PACKAGE_PATH if ($PACKAGE_PATH);
     $self->{PACKAGE_H}      = $PACKAGE_H    if ($PACKAGE_H);
     $self->{PACKAGE_FILE}   = $PACKAGE_FILE if ($PACKAGE_FILE);
@@ -319,6 +324,7 @@ sub __ExportConfigurations
     $self->{LIBRARIES2}     = \@LIBRARIES2;
     $self->{TESTLIBRARIES}  = \@TESTLIBRARIES;
     $self->{OPTLIBRARIES}   = \@OPTLIBRARIES;
+    $self->{CONTRIBEXTRA}   = \@CONTRIBEXTRA;
 
     $$x_tokens{PACKAGE_VERSION} = $PACKAGE_VERSION;
     $$x_tokens{PACKAGE_STRING} = $PACKAGE_NAME . ' ' . $PACKAGE_VERSION;
