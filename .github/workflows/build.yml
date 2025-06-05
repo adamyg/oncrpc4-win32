@@ -12,19 +12,29 @@ jobs:
             name: "Windows Latest MSVC",
             os: windows-latest,
             toolchain: vc2022,
-            toolversion: vs170
+            toolversion: vs170,
+            packagelabel: oncrpc-msvc-vs170
           }
         - {
-           name: "Windows Latest MinGW",
+           name: "Windows Latest MinGW64",
            os: windows-latest,
            toolchain: mingw64,
-           toolversion: mingw64
+           toolversion: mingw64,
+           packagelabel: oncrpc-mingw64
           }
         - {
            name: "Windows Latest OWC",
            os: windows-latest,
            toolchain: owc20,
-           toolversion: owc20
+           toolversion: owc20,
+           packagelabel: oncrpc-owc20
+          }
+        - {
+           name: "Windows Legacy OWC",
+           os: windows-latest,
+           toolchain: owc19,
+           toolversion: owc19,
+           packagelabel: oncrpc-owc19
           }
 
     steps:
@@ -35,6 +45,12 @@ jobs:
     - name: Checkout submodules
       run: |
         git submodule update --init --recursive
+
+    - name: Setup
+      if: startsWith(matrix.config.name, 'Windows')
+      shell: cmd
+      run: |
+        c:\msys64\usr\bin\pacman --noconfirm -S zip
 
     - name: MSVC setup
       uses: ilammy/msvc-dev-cmd@v1
@@ -59,6 +75,13 @@ jobs:
       with:
         version: "2.0"
         location: "C:\\Watcom"
+        
+    - name: OpenWatcom legacy setup
+      uses: open-watcom/setup-watcom@v0
+      if: startsWith(matrix.config.name, 'Windows Legacy OWC')
+      with:
+        version: "1.9"
+        location: "C:\\Watcom"
 
     - name: Generate
       if: startsWith(matrix.config.name, 'Windows')
@@ -70,7 +93,7 @@ jobs:
         @if "${{ matrix.config.toolchain }}"=="owc19"   call .\support\owc19setenv.bat C:\Watcom
         @set BUSYBOX=./win32/busybox
         @set PERL=c:/Strawberry/perl/bin/perl
-        c:/Strawberry/perl/bin/perl makelib.pl --perlpath=c:/Strawberry/perl/bin --busybox=%BUSYBOX% "${{ matrix.config.toolchain }}"
+        %PERL% makelib.pl --perlpath=c:/Strawberry/perl/bin --busybox=%BUSYBOX% "${{ matrix.config.toolchain }}"
 
     - name: Compile
       if: startsWith(matrix.config.name, 'Windows')
@@ -86,6 +109,12 @@ jobs:
         @set BUSYBOX=./win32/busybox
         @set PERL=c:/Strawberry/perl/bin/perl
         .\win32\gmake-42 release
+        c:\msys64\usr\bin\zip ${{ matrix.config.packagelabel }}-${{ github.run_number }}.zip ^
+                ./bin.${{ matrix.config.toolversion }}/release/rpc*.exe ^
+                ./bin.${{ matrix.config.toolversion }}/release/*.dll ^
+                ./lib.${{ matrix.config.toolversion }}/release/*.lib ^
+                ./include/rpc/* ^
+                ./include/*
 
     - name: Package
       uses: actions/upload-artifact@v4
@@ -93,11 +122,10 @@ jobs:
         name: package-${{ matrix.config.toolchain }}
         path: ./bin.${{ matrix.config.toolversion }}/release/*
 
-
     - name: Release artifacts
       if: startsWith(matrix.config.name, 'Windows')
       uses: softprops/action-gh-release@v2
       with:
-        files: ./bin.${{ matrix.config.toolversion }}/release/* 
+        files: ${{ matrix.config.packagelabel }}-${{ github.run_number }}.zip
         draft: true
 

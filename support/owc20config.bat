@@ -15,4 +15,3 @@ if not defined INNO (
 )                                               
 
 %PERL% ./support/config_windows.pl makelib.pl --inno=%INNO% %* owc20
-
