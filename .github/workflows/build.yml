@@ -75,7 +75,7 @@ jobs:
       with:
         version: "2.0"
         location: "C:\\Watcom"
-        
+
     - name: OpenWatcom legacy setup
       uses: open-watcom/setup-watcom@v0
       if: startsWith(matrix.config.name, 'Windows Legacy OWC')
@@ -113,8 +113,7 @@ jobs:
                 ./bin.${{ matrix.config.toolversion }}/release/rpc*.exe ^
                 ./bin.${{ matrix.config.toolversion }}/release/*.dll ^
                 ./lib.${{ matrix.config.toolversion }}/release/*.lib ^
-                ./include/rpc/* ^
-                ./include/*
+                ./liboncrpc/*.h
 
     - name: Package
       uses: actions/upload-artifact@v4
@@ -128,4 +127,3 @@ jobs:
       with:
         files: ${{ matrix.config.packagelabel }}-${{ github.run_number }}.zip
         draft: true
-

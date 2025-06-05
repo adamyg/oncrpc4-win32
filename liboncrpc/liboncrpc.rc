@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020 - 2022 Adam Young.
+ *  Copyright (c) 2020 - 2025 Adam Young.
  *  All rights reserved.
  *
  *  This file is part of oncrpc4-win32.
@@ -55,7 +55,7 @@ BEGIN
 			VALUE "InternalName",	"liboncrpc.dll\0"
 
 			VALUE "LegalCopyright",
-				"Copyright (c) 2020 - 2022 Adam Young, \n"
+				"Copyright (c) 2020 - 2025 Adam Young, \n"
 				"Copyright (c) 2010, Oracle America, Inc, \n"
 				"Copyright (c) The Regents of the University of California.  All rights reserved. \n"
 				"See --license for details. \n\0"
