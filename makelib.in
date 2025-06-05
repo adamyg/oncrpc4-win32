@@ -1,9 +1,9 @@
 #!/usr/bin/perl
-# $Id: makelib.in,v 1.7 2022/06/10 16:00:23 cvsuser Exp $
+# $Id: makelib.in,v 1.8 2025/06/04 19:01:20 cvsuser Exp $
 # -*- mode: perl; tabs: 8; indent-width: 4; -*-
 # makelib configuration
 #
-# Copyright (c) 2020 - 2022, Adam Young.
+# Copyright (c) 2020 - 2025, Adam Young.
 # All rights reserved.
 #
 # This file is part of oncrpc4-win32.
@@ -66,6 +66,40 @@ $PACKAGE_FILE   = 'package.h';
         'rpcinfo'
         );
 
+## Build notes
+
+sub
+NOTES()
+{
+        my $notes = <<EOT;
+ -
+ -      Virtual File Systems: cpio, extfs, shell, ftp, sfs, sftp, tar (see: config.h)
+ -            Screen library: console
+ -             Mouse support: native
+ -          Subshell support: n/a
+ -     Background operations: n/a
+ -           Internal editor: yes
+ -               Diff viewer: yes
+ -
+
+ Review the options above for accuracy.
+
+ Execute to build:
+
+    "make release"          - build software.
+
+ To generate an installer:
+
+    "make release package"  - build installer.
+
+ Optionally after installation:
+
+    "make release clean"    - remove build tree.
+
+EOT
+        return $notes;
+}
+
 ## Toolchain
 
 sub
@@ -74,7 +108,7 @@ ResolveWINKITx86()
         my $ProgramFiles = $ENV{"ProgramFiles(x86)"};
         $ProgramFiles =~ s/\\/\//g;
 
-        my @WINKIT = (                                  # Vista+
+        my @WINKIT = (                           # Vista+
                 # https://en.wikipedia.org/wiki/Microsoft_Windows_SDK
                 "${ProgramFiles}/Windows Kits/8.0/Lib/win8/um/x86",
                 "${ProgramFiles}/Windows Kits/8.1/Lib/winv6.3/um/x86",
@@ -87,16 +121,16 @@ ResolveWINKITx86()
                 my $sdk = $_;
                 next if (! -d $sdk);
 
-                if (/\/1[01]$/) {                       # "Lib/10.0.xxxxx.0/um/x86"
-                    my @winsdk10 = glob("'${sdk}/Lib/*/um/x86'");
-                    foreach (@winsdk10) {
-                        next if (! -f "$_/Kernel32.lib");
-                        push @sdks, $_;
-                    }
+                if (/\/1[01]$/) {                # "Lib/10.0.xxxxx.0/um/x86"
+                        my @winsdk10 = glob("'${sdk}/Lib/*/um/x86'");
+                        foreach (@winsdk10) {
+                                next if (! -f "$_/Kernel32.lib");
+                                push @sdks, $_;
+                        }
 
                 } else {
-                    next if (! -f "${sdk}/Kernel32.lib");
-                    push @sdks, $sdk;
+                        next if (! -f "${sdk}/Kernel32.lib");
+                        push @sdks, $sdk;
                 }
         }
 
@@ -147,7 +181,9 @@ Configure()
                 add_define('_WIN32_WINNT=0x600');       # Windows SDK
                 add_define('__STDC_WANT_LIB_EXT1__');
 
-                ResolveWINKITx86();
+            ##  ResolveWINKITx86();
+                add_system_library('Iphlpapi.lib');
+                add_system_library('Version.lib');
         }
 
         ################################################################################
@@ -219,4 +255,5 @@ Configure()
 #
 
 1;
+
 

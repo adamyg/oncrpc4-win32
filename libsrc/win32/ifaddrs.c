@@ -1,7 +1,7 @@
 /*
  * <ifaddrs.h> implementation
  *
- * Copyright (c) 2022, Adam Young.
+ * Copyright (c) 2022 - 2025, Adam Young.
  * All rights reserved.
  *
  * This file is part of oncrpc4-win32.
@@ -57,8 +57,14 @@ WINAPI ULONG GetAdaptersAddresses(ULONG Family, ULONG Flags, PVOID Reserved, PIP
 #pragma comment(lib, "Iphlpapi.lib")
 #endif  /*__MINGW32__*/
 
+#if defined(__WATCOMC__)
+#include <Iphlpapi.h>
+#pragma comment(lib, "Iphlpapi.lib")
+#endif
+
 typedef DWORD (WINAPI *ConvertInterfaceGuidToLuid_t)(const GUID *, NET_LUID *);
 typedef DWORD (WINAPI *ConvertInterfaceLuidToNameA_t)(const NET_LUID *, char *, size_t);
+typedef ULONG (WINAPI *if_nametoindex_t)(PCSTR InterfaceName);
 
 static HMODULE hIphlpapi = 0;
 static ConvertInterfaceGuidToLuid_t fnConvertInterfaceGuidToLuid;
@@ -223,5 +229,38 @@ freeifaddrs(struct ifaddrs *ifp)
 		ifp = next;
 	}
 }
+
+
+#if defined(__WATCOMC__)
+static if_nametoindex_t fnif_nametoindex;
+
+LIBRPC_API ULONG
+if_nametoindex(PCSTR InterfaceName)
+{
+//	NET_IFINDEX index = 0;
+//	NET_LUID luid = {0};
+//
+//	if (NETIO_ERROR_SUCCESS == ConvertInterfaceNameToLuidA(InterfaceName, &luid) &&
+//			ConvertInterfaceLuidToIndex(&luid, &index) == 0) {
+//		return index;
+//	}
+
+	if (NULL == fnif_nametoindex) {
+		if (! hIphlpapi) {
+			hIphlpapi = LoadLibraryA("Iphlpapi");
+		}
+
+		if (hIphlpapi) {
+			fnif_nametoindex = (if_nametoindex_t)GetProcAddress(hIphlpapi, "if_nametoindex");
+		}
+	}
+
+	if (fnif_nametoindex) {
+		return fnif_nametoindex(InterfaceName);
+	}
+
+	return 0;
+}
+#endif //__WATCOMC__
 
 //end

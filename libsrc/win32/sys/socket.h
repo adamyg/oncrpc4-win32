@@ -60,11 +60,12 @@ struct timespec {
         time_t tv_sec;
         long tv_nsec;
 };
+
 #else
 #include <signal.h>
-#endif  /*TIMESPEC_STRUCT_T*/
-
-ULONG WINAPI if_nametoindex(PCSTR InterfaceName);
+#endif /*TIMESPEC_STRUCT_T*/
+      
+LIBRPC_API ULONG if_nametoindex(PCSTR InterfaceName); /* ifaddrs.c */
 #endif
 
 /*end*/

@@ -4,7 +4,7 @@ CVS/
 msvc2015/
 ref/
 old/
-objects.*/
+obj.*/
 lib.*/
 bin.*/
 *.ref/

@@ -1,7 +1,7 @@
 /*
  *  Simple win32 threads - conditions.
  *
- *  Copyright (c) 2020 - 2022, Adam Young.
+ *  Copyright (c) 2020 - 2025, Adam Young.
  *  All rights reserved.
  *
  *  This file is part of oncrpc4-win32.
@@ -41,10 +41,11 @@
 #endif
 
 #pragma comment(lib, "Kernel32.lib")
-    //#if defined(__WATCOMC__)
-    //see: CONDITION_VARIABLE_INIT = {0}
-    //#define InitializeConditionVariable(__cv) memset(__cv,0,sizeof(*__cv))
-    //#endif
+
+#if defined(__WATCOMC__) && (__WATCOMC__ < 1300)
+#include "condition_xp.c"
+#endif //__WATCOMC__
+
 
 static __inline DWORD
 timespec_to_msec(const struct timespec *a)
@@ -61,6 +62,9 @@ pthread_cond_destroy(pthread_cond_t *cond)
     }
     if (cond->flag) {
         assert(COND_MAGIC == cond->flag);
+#if defined(DeleteConditionVariable)
+        DeleteConditionVariable(&cond->cv);     /* condition_xp */
+#endif
         cond->flag = 0;
         return 0;
     }
